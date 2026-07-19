@@ -1,0 +1,11 @@
+title = "gitleaks config — cra-reference-pipeline"
+
+[extend]
+useDefault = true
+
+[allowlist]
+description = "Bewusst unechte Platzhalter aus der Dokumentation (siehe CLAUDE.md)"
+regexes = [
+  '''REPLACE_ME''',
+  '''sk-example-not-a-real-key''',
+]
