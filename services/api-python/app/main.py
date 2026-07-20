@@ -1,6 +1,11 @@
+import tomllib
+from pathlib import Path
+
 from fastapi import FastAPI
 
-VERSION = "0.1.0"
+VERSION = tomllib.loads(
+    (Path(__file__).resolve().parent.parent / "pyproject.toml").read_text()
+)["project"]["version"]
 
 app = FastAPI()
 

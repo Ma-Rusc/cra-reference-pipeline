@@ -9,4 +9,5 @@ zugehörigen Jobs existieren.
 
 | CRA-Anforderung | Job | Nachweis | Status |
 |---|---|---|---|
-| | | | |
+| Vorstufe zu Anhang I Teil II Nr. 1 (SBOM) — reproduzierbarer Build | — | `services/*/Dockerfile` (Digest-Pins), `uv.lock`, `package-lock.json` | Vorstufe (SBOM selbst folgt erst Stufe 2) |
+| Anhang I Teil I Nr. 3 (sichere Voreinstellungen) — Non-Root-Container | — | `USER`-Direktive je Dockerfile, verifiziert mit `docker run --rm <image> id` | Teilweise — Voreinstellung, zur Laufzeit mit `--user root` überschreibbar; deckt nur Non-Root ab, nicht alle Aspekte von "secure by default" |
