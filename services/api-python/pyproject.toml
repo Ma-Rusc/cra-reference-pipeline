@@ -15,7 +15,8 @@ dev = [
 
 [tool.uv]
 package = false
-constraint-dependencies = ["starlette>=1.0.1"]
+# starlette < 1.3.1: GHSA high-severity Advisory (transitive via fastapi). Erzwungener Fix-Schwellwert.
+constraint-dependencies = ["starlette>=1.3.1"]
 
 [tool.pytest.ini_options]
 pythonpath = ["."]
