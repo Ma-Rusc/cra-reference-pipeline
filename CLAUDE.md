@@ -98,6 +98,18 @@ Es demonstriert die Pipeline, es ist kein CRA-pflichtiges Produkt.
     Dockerfile** — mindestens `.git`, `.env*`, Testverzeichnis,
     sprachspezifische Cache-/Abhängigkeitsordner.
 
+### Berechtigungen — niemals umgehen
+
+16. **Dateisystem-Berechtigungen werden nie umgangen.** Schlägt eine Operation
+    an fehlenden Rechten fehl, wird das gemeldet und der Nutzer entscheidet.
+    Kein Ausweichen über einen Container, `sudo`, ein anderes Nutzer-/Root-Kontext
+    oder ein sonstiges Werkzeug, um an den normalen Nutzerrechten vorbei zu
+    schreiben oder zu löschen. Dass Docker als root läuft, ist kein Freibrief.
+17. **Container schreiben nie als root in den Working Tree.** Jeder lokale
+    Docker-Aufruf mit Bind-Mount in das Repo läuft mit
+    `--user $(id -u):$(id -g)`, damit erzeugte Dateien dem Nutzer gehören und
+    keine root-eigenen Artefakte im Arbeitsverzeichnis entstehen.
+
 ## Befehle
 
 ```bash
