@@ -83,6 +83,21 @@ Es demonstriert die Pipeline, es ist kein CRA-pflichtiges Produkt.
 12. **Ein Job pro PR.** Inkrementell aufbauen, jeder Job wird grün gesehen,
     bevor der nächste entsteht.
 
+### Container
+
+13. **Container laufen als Nicht-Root.** Jedes Dockerfile setzt eine
+    `USER`-Direktive auf einen dedizierten, unprivilegierten Nutzer. Das ist
+    eine Container-Voreinstellung, kein Laufzeit-Zwang — mit
+    `docker run --user root` überschreibbar, aber der sichere Default steht.
+14. **Node-Images bauen ausschließlich mit `npm ci`, nie mit `npm install`.**
+    `npm ci` installiert exakt das, was in `package-lock.json` steht, und
+    bricht ab, wenn Lockfile und `package.json` auseinanderlaufen —
+    reproduzierbarer Build statt stillschweigend aktualisierter
+    Abhängigkeiten.
+15. **Jeder Service hat eine eigene `.dockerignore` neben seinem
+    Dockerfile** — mindestens `.git`, `.env*`, Testverzeichnis,
+    sprachspezifische Cache-/Abhängigkeitsordner.
+
 ## Befehle
 
 ```bash
