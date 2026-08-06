@@ -48,6 +48,8 @@ jobs:
       - name: Image bauen (und bei Push nach main veröffentlichen)
         id: build
         uses: docker/build-push-action@53b7df96c91f9c12dcc8a07bcb9ccacbed38856a # v7.3.0
+        env:
+          DOCKER_BUILD_RECORD_UPLOAD: "false"
         with:
           context: services/${{ matrix.service }}
           tags: ${{ env.IMAGE_REF }}
@@ -100,6 +102,17 @@ jobs:
           name: image-${{ matrix.service }}
 
       - name: SBOM-Verzeichnis anlegen
+        # CI-spezifischer Kompromiss, kein Vorbild fuer lokale Docker-Aufrufe:
+        # Die syft-Container laufen unten bewusst OHNE --user "$(id -u):$(id -g)"
+        # (anders als CLAUDE.md Regel 17 es fuer lokale Bind-Mounts vorschreibt),
+        # weil anchore/syft@sha256:... beim docker-archive-Scan sein eigenes,
+        # fest eingerichtetes /tmp und /.cache braucht - eine erzwungene fremde
+        # UID kann dort nicht schreiben (daran scheiterte der erste Versuch in
+        # Stufe 2). Weil die interne UID des Containers dadurch unbekannt
+        # bleibt, muss sbom/ world-writable sein, damit er dort hineinschreiben
+        # kann. Auf einer Wegwerf-Runner-VM unproblematisch; ein lokaler Nachbau
+        # dieser Befehle wuerde die SBOM-Dateien als root im Working Tree
+        # erzeugen - dafuer lokal immer --user setzen.
         run: |
           mkdir -p sbom
           chmod 777 sbom
