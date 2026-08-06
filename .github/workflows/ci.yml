@@ -100,11 +100,13 @@ jobs:
           name: image-${{ matrix.service }}
 
       - name: SBOM-Verzeichnis anlegen
-        run: mkdir -p sbom
+        run: |
+          mkdir -p sbom
+          chmod 777 sbom
 
       - name: Quell-SBOM erzeugen
         run: |
-          docker run --rm --user "$(id -u):$(id -g)" \
+          docker run --rm \
             -v "$PWD/services/${{ matrix.service }}:/src:ro" \
             -v "$PWD/sbom:/out" \
             anchore/syft@sha256:1288ea4c8b38767b4e620c1e312c8cb26b6e887a99b4f07ab6cd19fc6f225026 \
@@ -112,7 +114,7 @@ jobs:
 
       - name: Image-SBOM erzeugen (per Digest-Archiv, nicht per Tag)
         run: |
-          docker run --rm --user "$(id -u):$(id -g)" \
+          docker run --rm \
             -v "$PWD:/work" \
             anchore/syft@sha256:1288ea4c8b38767b4e620c1e312c8cb26b6e887a99b4f07ab6cd19fc6f225026 \
             scan docker-archive:/work/image.tar -o cyclonedx-json=/work/sbom/${{ matrix.service }}-image.cdx.json
