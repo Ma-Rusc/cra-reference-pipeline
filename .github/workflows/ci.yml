@@ -25,11 +25,14 @@ jobs:
       - name: Checkout
         uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
 
-      - name: GHCR-Pfad in Kleinbuchstaben ermitteln
+      - name: Referenzen ableiten (Kleinbuchstaben-Owner, Image-Tag)
         id: vars
         env:
           OWNER: ${{ github.repository_owner }}
-        run: echo "owner=${OWNER,,}" >> "$GITHUB_OUTPUT"
+        run: |
+          owner="${OWNER,,}"
+          echo "owner=$owner" >> "$GITHUB_OUTPUT"
+          echo "IMAGE_REF=ghcr.io/$owner/${{ matrix.service }}:${{ github.sha }}" >> "$GITHUB_ENV"
 
       - name: Buildx einrichten
         uses: docker/setup-buildx-action@bb05f3f5519dd87d3ba754cc423b652a5edd6d2c # v4.2.0
@@ -47,19 +50,28 @@ jobs:
         uses: docker/build-push-action@53b7df96c91f9c12dcc8a07bcb9ccacbed38856a # v7.3.0
         with:
           context: services/${{ matrix.service }}
-          tags: ghcr.io/${{ steps.vars.outputs.owner }}/${{ matrix.service }}:${{ github.sha }}
+          tags: ${{ env.IMAGE_REF }}
           load: true
           push: ${{ github.event_name == 'push' }}
 
       - name: Nicht-Root-Voreinstellung verifizieren
         run: |
-          image="ghcr.io/${{ steps.vars.outputs.owner }}/${{ matrix.service }}:${{ github.sha }}"
-          user="$(docker inspect --format='{{.Config.User}}' "$image")"
+          user="$(docker inspect --format='{{.Config.User}}' "$IMAGE_REF")"
           if [ -z "$user" ] || [ "$user" = "0" ] || [ "$user" = "root" ] || [ "$user" = "0:0" ]; then
-            echo "::error::Image $image ist als Root konfiguriert (Config.User='$user')."
+            echo "::error::Image $IMAGE_REF ist als Root konfiguriert (Config.User='$user')."
             exit 1
           fi
           echo "Nicht-Root bestätigt: Config.User=$user"
+
+      - name: Image als Archiv sichern
+        run: docker save "$IMAGE_REF" -o image.tar
+
+      - name: Image-Archiv als Artefakt hochladen
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: image-${{ matrix.service }}
+          path: image.tar
+          retention-days: 1
 
       - name: Digest festhalten
         if: github.event_name == 'push'
@@ -68,3 +80,66 @@ jobs:
           echo '```' >> "$GITHUB_STEP_SUMMARY"
           echo "ghcr.io/${{ steps.vars.outputs.owner }}/${{ matrix.service }}@${{ steps.build.outputs.digest }}" >> "$GITHUB_STEP_SUMMARY"
           echo '```' >> "$GITHUB_STEP_SUMMARY"
+
+  sbom:
+    name: sbom (${{ matrix.service }})
+    runs-on: ubuntu-latest
+    needs: build
+    permissions:
+      contents: read
+    strategy:
+      matrix:
+        service: [api-python, web-node]
+    steps:
+      - name: Checkout
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+
+      - name: Image-Archiv herunterladen
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          name: image-${{ matrix.service }}
+
+      - name: SBOM-Verzeichnis anlegen
+        run: |
+          mkdir -p sbom
+          chmod 777 sbom
+
+      - name: Quell-SBOM erzeugen
+        run: |
+          docker run --rm \
+            -v "$PWD/services/${{ matrix.service }}:/src:ro" \
+            -v "$PWD/sbom:/out" \
+            anchore/syft@sha256:1288ea4c8b38767b4e620c1e312c8cb26b6e887a99b4f07ab6cd19fc6f225026 \
+            scan dir:/src -o cyclonedx-json=/out/${{ matrix.service }}-source.cdx.json
+
+      - name: Image-SBOM erzeugen (per Digest-Archiv, nicht per Tag)
+        run: |
+          docker run --rm \
+            -v "$PWD:/work" \
+            anchore/syft@sha256:1288ea4c8b38767b4e620c1e312c8cb26b6e887a99b4f07ab6cd19fc6f225026 \
+            scan docker-archive:/work/image.tar -o cyclonedx-json=/work/sbom/${{ matrix.service }}-image.cdx.json
+
+      - name: Quell-SBOM hochladen
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: sbom-${{ matrix.service }}-source
+          path: sbom/${{ matrix.service }}-source.cdx.json
+          retention-days: 90
+
+      - name: Image-SBOM hochladen
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: sbom-${{ matrix.service }}-image
+          path: sbom/${{ matrix.service }}-image.cdx.json
+          retention-days: 90
+
+      - name: Plausibilität prüfen (Image-SBOM muss mehr Komponenten haben als Quell-SBOM)
+        run: |
+          source_count="$(jq '.components | length' "sbom/${{ matrix.service }}-source.cdx.json")"
+          image_count="$(jq '.components | length' "sbom/${{ matrix.service }}-image.cdx.json")"
+          echo "Quell-SBOM: $source_count Komponenten"
+          echo "Image-SBOM: $image_count Komponenten"
+          if [ "$image_count" -le "$source_count" ]; then
+            echo "::error::Image-SBOM ($image_count) hat nicht mehr Komponenten als Quell-SBOM ($source_count) - unplausibel fuer ein Container-Image mit OS-Paketen."
+            exit 1
+          fi
