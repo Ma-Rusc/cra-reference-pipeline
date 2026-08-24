@@ -156,3 +156,136 @@ jobs:
             echo "::error::Image-SBOM ($image_count) hat nicht mehr Komponenten als Quell-SBOM ($source_count) - unplausibel fuer ein Container-Image mit OS-Paketen."
             exit 1
           fi
+
+  scan:
+    name: scan (${{ matrix.service }})
+    runs-on: ubuntu-latest
+    needs: sbom
+    permissions:
+      contents: read
+      security-events: write
+    strategy:
+      matrix:
+        include:
+          - service: api-python
+            lockfile: uv.lock
+          - service: web-node
+            lockfile: package-lock.json
+    steps:
+      - name: Checkout
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+
+      - name: Image-SBOM herunterladen
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          name: sbom-${{ matrix.service }}-image
+
+      - name: Report-Verzeichnis anlegen
+        # Gleiches Muster wie im sbom-Job: die Scanner unten laufen ohne
+        # erzwungene Host-UID, ihre interne UID ist daher unbekannt.
+        # World-writable ist ein bewusster CI-Kompromiss fuer eine
+        # Wegwerf-Runner-VM, kein Vorbild fuer lokale Docker-Aufrufe.
+        run: |
+          mkdir -p reports
+          chmod 777 reports
+
+      - name: grype gegen Image-SBOM
+        run: |
+          docker run --rm -v "$PWD:/work" \
+            anchore/grype@sha256:ddf9e9f204049f3a4a0955ef70873cabab6a31432125ad4f20a490b54950a253 \
+            sbom:/work/${{ matrix.service }}-image.cdx.json \
+            -o sarif=/work/reports/grype-${{ matrix.service }}.sarif
+
+      - name: grype-SARIF hochladen
+        uses: github/codeql-action/upload-sarif@db488ddef3bf6cb639b32c2e9a7c0a7ea8271d28 # v4.37.8
+        with:
+          sarif_file: reports/grype-${{ matrix.service }}.sarif
+          category: grype-${{ matrix.service }}
+
+      - name: osv-scanner gegen Lockfile
+        # osv-scanner beendet sich per Default mit Exit-Code 1 bei Funden.
+        # Stufe 3 sammelt nur (Gate kommt in Stufe 4), daher || true.
+        run: |
+          docker run --rm -v "$PWD:/work" -w /work \
+            ghcr.io/google/osv-scanner@sha256:8108ae94eadea5a02c9bec6e646909d5b790b44bd62d7f5b7f0b1d6d0ffc7734 \
+            scan -L services/${{ matrix.service }}/${{ matrix.lockfile }} \
+            --format sarif --output-file reports/osv-scanner-${{ matrix.service }}.sarif || true
+
+      - name: osv-scanner-SARIF hochladen
+        uses: github/codeql-action/upload-sarif@db488ddef3bf6cb639b32c2e9a7c0a7ea8271d28 # v4.37.8
+        with:
+          sarif_file: reports/osv-scanner-${{ matrix.service }}.sarif
+          category: osv-scanner-${{ matrix.service }}
+
+      - name: semgrep gegen services/${{ matrix.service }}
+        run: |
+          docker run --rm -v "$PWD:/work" -w /work \
+            semgrep/semgrep@sha256:f1f7b71861c7b28b6e0f661225a2c4f58a484f5d0f182465c6d6b3b22f972ade \
+            semgrep scan --config=p/ci --sarif \
+            --sarif-output=reports/semgrep-${{ matrix.service }}.sarif \
+            services/${{ matrix.service }}
+
+      - name: semgrep-SARIF hochladen
+        uses: github/codeql-action/upload-sarif@db488ddef3bf6cb639b32c2e9a7c0a7ea8271d28 # v4.37.8
+        with:
+          sarif_file: reports/semgrep-${{ matrix.service }}.sarif
+          category: semgrep-${{ matrix.service }}
+
+      - name: trivy Lizenz-Scan gegen Image-SBOM
+        run: |
+          docker run --rm -v "$PWD:/work" -w /work \
+            aquasec/trivy@sha256:62b1e65e8869bc4b4c6aa4fa2b21595256c7c2f6018a9d9ad61caf87187c1969 \
+            sbom ${{ matrix.service }}-image.cdx.json --scanners license \
+            --format sarif --output reports/trivy-license-${{ matrix.service }}.sarif
+
+      - name: trivy-license-SARIF hochladen
+        uses: github/codeql-action/upload-sarif@db488ddef3bf6cb639b32c2e9a7c0a7ea8271d28 # v4.37.8
+        with:
+          sarif_file: reports/trivy-license-${{ matrix.service }}.sarif
+          category: trivy-license-${{ matrix.service }}
+
+  gitleaks:
+    name: gitleaks
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      security-events: write
+    steps:
+      - name: Checkout (volle Historie)
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        with:
+          fetch-depth: 0
+
+      - name: Report-Verzeichnis anlegen
+        run: |
+          mkdir -p reports
+          chmod 777 reports
+
+      - name: Working Tree scannen
+        # --redact ist Pflicht: das Repo ist public, ein Fund landet sonst
+        # im Klartext in einer oeffentlich einsehbaren Code-Scanning-Ansicht.
+        # || true: Stufe 3 sammelt nur, Gate kommt in Stufe 4.
+        run: |
+          docker run --rm -v "$PWD:/repo" -w /repo \
+            ghcr.io/gitleaks/gitleaks@sha256:c00b6bd0aeb3071cbcb79009cb16a60dd9e0a7c60e2be9ab65d25e6bc8abbb7f \
+            dir . --config .gitleaks.toml --redact \
+            --report-format sarif --report-path reports/gitleaks-workingtree.sarif || true
+
+      - name: gitleaks-SARIF hochladen (Working Tree)
+        uses: github/codeql-action/upload-sarif@db488ddef3bf6cb639b32c2e9a7c0a7ea8271d28 # v4.37.8
+        with:
+          sarif_file: reports/gitleaks-workingtree.sarif
+          category: gitleaks-workingtree
+
+      - name: Historie scannen
+        run: |
+          docker run --rm -v "$PWD:/repo" -w /repo \
+            ghcr.io/gitleaks/gitleaks@sha256:c00b6bd0aeb3071cbcb79009cb16a60dd9e0a7c60e2be9ab65d25e6bc8abbb7f \
+            git . --config .gitleaks.toml --redact \
+            --report-format sarif --report-path reports/gitleaks-history.sarif || true
+
+      - name: gitleaks-SARIF hochladen (Historie)
+        uses: github/codeql-action/upload-sarif@db488ddef3bf6cb639b32c2e9a7c0a7ea8271d28 # v4.37.8
+        with:
+          sarif_file: reports/gitleaks-history.sarif
+          category: gitleaks-history
