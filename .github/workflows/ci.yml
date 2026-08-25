@@ -323,9 +323,14 @@ jobs:
           chmod 777 reports
 
       - name: trivy image scan (Gegencheck zu grype)
+        # Kein --output diesmal: JSON direkt auf stdout, damit ein
+        # stiller Fehlschlag beim Dateischreiben als Fehlerquelle
+        # ausscheidet. Exit-Code wird bewusst nicht per -e verschluckt,
+        # damit ein stiller Absturz sichtbar wird (voriger Versuch endete
+        # ohne Fehlermeldung bei Exit-Code 0, aber ohne Ausgabedatei).
         run: |
+          set +e
           docker run --rm -v "$PWD:/work" -w /work \
             aquasec/trivy@sha256:62b1e65e8869bc4b4c6aa4fa2b21595256c7c2f6018a9d9ad61caf87187c1969 \
-            image --input /work/image.tar --scanners vuln \
-            --format json --output /work/reports/trivy-image-web-node.json
-          cat /work/reports/trivy-image-web-node.json
+            image --input /work/image.tar --scanners vuln --format json
+          echo "docker run exit code: $?"
