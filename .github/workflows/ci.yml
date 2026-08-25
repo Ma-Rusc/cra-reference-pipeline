@@ -65,6 +65,18 @@ jobs:
           fi
           echo "Nicht-Root bestätigt: Config.User=$user"
 
+      - name: EXPERIMENT Smoke-Test /version (nur Stufe-3.5-Untersuchung, nicht mergen)
+        run: |
+          if [ "${{ matrix.service }}" = "api-python" ]; then PORT=8000; else PORT=3000; fi
+          docker run -d --name smoke -p "$PORT:$PORT" "$IMAGE_REF"
+          sleep 5
+          echo "--- docker logs ---"
+          docker logs smoke || true
+          echo "--- curl /version ---"
+          curl -sf "localhost:$PORT/version"
+          echo
+          docker rm -f smoke
+
       - name: Image als Archiv sichern
         run: docker save "$IMAGE_REF" -o image.tar
 
