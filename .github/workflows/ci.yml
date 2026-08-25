@@ -18,7 +18,7 @@ jobs:
       packages: write
     strategy:
       matrix:
-        service: [api-python, web-node]
+        service: [web-node]
     outputs:
       digest: ${{ steps.build.outputs.digest }}
     steps:
@@ -103,7 +103,7 @@ jobs:
       contents: read
     strategy:
       matrix:
-        service: [api-python, web-node]
+        service: [web-node]
     steps:
       - name: Checkout
         uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
@@ -179,8 +179,6 @@ jobs:
     strategy:
       matrix:
         include:
-          - service: api-python
-            lockfile: uv.lock
           - service: web-node
             lockfile: package-lock.json
     steps:
