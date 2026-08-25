@@ -317,10 +317,15 @@ jobs:
         with:
           name: image-web-node
 
+      - name: Report-Verzeichnis anlegen
+        run: |
+          mkdir -p reports
+          chmod 777 reports
+
       - name: trivy image scan (Gegencheck zu grype)
         run: |
           docker run --rm -v "$PWD:/work" -w /work \
             aquasec/trivy@sha256:62b1e65e8869bc4b4c6aa4fa2b21595256c7c2f6018a9d9ad61caf87187c1969 \
             image --input /work/image.tar --scanners vuln \
-            --format json --output /work/trivy-image-web-node.json
-          cat /work/trivy-image-web-node.json
+            --format json --output /work/reports/trivy-image-web-node.json
+          cat /work/reports/trivy-image-web-node.json
