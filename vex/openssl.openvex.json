@@ -3,7 +3,8 @@
   "@id": "https://github.com/Ma-Rusc/cra-reference-pipeline/vex/openssl",
   "author": "https://github.com/Ma-Rusc/cra-reference-pipeline",
   "timestamp": "2026-08-26T12:00:00Z",
-  "version": 1,
+  "last_updated": "2026-08-26T14:00:00Z",
+  "version": 2,
   "statements": [
     {
       "vulnerability": { "name": "CVE-2026-14457" },
@@ -12,9 +13,8 @@
         { "@id": "pkg:deb/debian/openssl-provider-legacy@3.5.6-1~deb13u2?arch=amd64&distro=debian-13.6&upstream=openssl" },
         { "@id": "pkg:deb/debian/libssl3t64@3.5.6-1~deb13u2?arch=amd64&distro=debian-13.6&upstream=openssl" }
       ],
-      "status": "not_affected",
-      "justification": "vulnerable_code_not_present",
-      "status_notes": "grype meldet fix.state=fixed. Debian Security Tracker bestätigt: für Debian trixie ist diese CVE in Version 3.5.6-1~deb13u2 bereits behoben — exakt die Version, die im Image installiert ist (verifiziert gegen grype-artifact.version). Die Meldung ist ein Scanner-Erfassungsartefakt (grype-Vulnerability-DB scheinbar noch nicht mit dem Debian-Backport-Fix synchronisiert), keine echte offene Schwachstelle: der ursprünglich verwundbare Code ist im installierten Paket bereits ersetzt."
+      "status": "fixed",
+      "status_notes": "Debian Security Tracker bestätigt: für Debian trixie ist diese CVE in Version 3.5.6-1~deb13u2 behoben — exakt die im Image installierte Version (verifiziert gegen grype-artifact.version). grype meldet den Fund dennoch als offen (fix.state=fixed in grypes eigener Metadaten, aber ohne den Match gegen die tatsächlich installierte Fix-Version aufzulösen) — vermutlich eine noch nicht mit dem Debian-Backport synchronisierte grype-Vulnerability-DB. Nicht 'not_affected', da die Schwachstelle real existierte und durch genau diese Paketversion behoben wurde, nicht weil der betroffene Code strukturell nie vorhanden war."
     },
     {
       "vulnerability": { "name": "CVE-2026-63075" },
@@ -23,9 +23,8 @@
         { "@id": "pkg:deb/debian/openssl-provider-legacy@3.5.6-1~deb13u2?arch=amd64&distro=debian-13.6&upstream=openssl" },
         { "@id": "pkg:deb/debian/libssl3t64@3.5.6-1~deb13u2?arch=amd64&distro=debian-13.6&upstream=openssl" }
       ],
-      "status": "not_affected",
-      "justification": "vulnerable_code_not_present",
-      "status_notes": "grype meldet fix.state=fixed. Debian Security Tracker bestätigt: in Debian trixie bereits in 3.5.6-1~deb13u2 behoben — exakt die installierte Version. Scanner-Erfassungsartefakt, keine offene Schwachstelle."
+      "status": "fixed",
+      "status_notes": "Debian Security Tracker bestätigt: in Debian trixie bereits in 3.5.6-1~deb13u2 behoben — exakt die installierte Version (verifiziert gegen grype-artifact.version). grype meldet den Fund dennoch, vermutlich DB-Sync-Verzögerung gegenüber dem Debian-Backport. Nicht 'not_affected': die Schwachstelle war real, ist aber durch diese Paketversion behoben."
     },
     {
       "vulnerability": { "name": "CVE-2026-63076" },
@@ -34,9 +33,8 @@
         { "@id": "pkg:deb/debian/openssl-provider-legacy@3.5.6-1~deb13u2?arch=amd64&distro=debian-13.6&upstream=openssl" },
         { "@id": "pkg:deb/debian/libssl3t64@3.5.6-1~deb13u2?arch=amd64&distro=debian-13.6&upstream=openssl" }
       ],
-      "status": "not_affected",
-      "justification": "vulnerable_code_not_present",
-      "status_notes": "grype meldet fix.state=fixed. Debian Security Tracker bestätigt: in Debian trixie bereits in 3.5.6-1~deb13u2 behoben — exakt die installierte Version. Scanner-Erfassungsartefakt, keine offene Schwachstelle."
+      "status": "fixed",
+      "status_notes": "Debian Security Tracker bestätigt: in Debian trixie bereits in 3.5.6-1~deb13u2 behoben — exakt die installierte Version (verifiziert gegen grype-artifact.version). grype meldet den Fund dennoch, vermutlich DB-Sync-Verzögerung gegenüber dem Debian-Backport. Nicht 'not_affected': die Schwachstelle war real, ist aber durch diese Paketversion behoben."
     },
     {
       "vulnerability": { "name": "CVE-2026-14456" },
@@ -47,7 +45,7 @@
       ],
       "status": "not_affected",
       "justification": "vulnerable_code_not_in_execute_path",
-      "status_notes": "fix.state=fixed laut grype, Debian Security Tracker bestätigt jedoch: für trixie weiterhin ungefixt ('vulnerable'), kein Backport geplant — das ist also eine echte, aktuell ungepatchte Schwachstelle, kein Scanner-Artefakt wie die drei oben. Betrifft ausschließlich OpenSSLs QUIC-Server-Implementierung: unbegrenztes Anlegen von Channels für unbekannte Connection-IDs, erreichbar nur über eine aktive QUIC-Listener-SSL-Instanz, die eingehende Initial-Packets schneller empfängt als die Anwendung SSL_accept() aufruft. services/api-python hat keine QUIC/HTTP3-Bibliothek (kein aioquic o. ä. in uv.lock), uvicorn[standard] implementiert kein QUIC, und der Dockerfile-CMD startet uvicorn ohne --ssl-keyfile (reine HTTP-Auslieferung, TLS-Terminierung liegt außerhalb des Containers). Der QUIC-Server-Codepfad in libssl wird von diesem Prozess nie erreicht."
+      "status_notes": "fix.state=fixed laut grype, Debian Security Tracker bestätigt jedoch: für trixie weiterhin ungefixt ('vulnerable'), kein Backport geplant — das ist also eine echte, aktuell ungepatchte Schwachstelle, kein Scanner-Artefakt wie die drei oben. Betrifft ausschließlich OpenSSLs QUIC-Server-Implementierung: unbegrenztes Anlegen von Channels für unbekannte Connection-IDs, erreichbar nur über eine aktive QUIC-Listener-SSL-Instanz, die eingehende Initial-Packets schneller empfängt als die Anwendung SSL_accept() aufruft. services/api-python hat keine QUIC/HTTP3-Bibliothek (kein aioquic o. ä. in uv.lock), uvicorn[standard] implementiert kein QUIC, und der Dockerfile-CMD startet uvicorn ohne --ssl-keyfile (reine HTTP-Auslieferung, TLS-Terminierung liegt außerhalb des Containers). Auch ausgehend gibt es keinen TLS-Client-Pfad, der QUIC berühren könnte: httpx (die einzige HTTP-Client-Bibliothek im Dependency-Baum) steht nur in der uv dev-Gruppe, `uv sync --locked --no-dev` installiert sie nicht — verifiziert direkt gegen die Image-SBOM (sbom-api-python-image, kein httpx/httpcore-Component, nur h11 für den eingehenden uvicorn-Pfad). services/api-python initiiert damit zur Laufzeit überhaupt keine ausgehende TLS-Verbindung. Der QUIC-Server-Codepfad in libssl wird von diesem Prozess nie erreicht — weder eingehend noch ausgehend."
     },
     {
       "vulnerability": { "name": "CVE-2026-18798" },
@@ -58,7 +56,7 @@
       ],
       "status": "not_affected",
       "justification": "vulnerable_code_not_in_execute_path",
-      "status_notes": "fix.state=fixed laut grype, Debian Security Tracker bestätigt: für trixie weiterhin ungefixt, kein Backport geplant. Double-Free in port_default_packet_handler()/port_bind_channel() (QUIC Record-Layer RX), auslösbar durch ein RFC-9000-widriges QUIC-INITIAL-Paket mit zu kurzer Destination-Connection-ID. Wie bei CVE-2026-14456: setzt eine aktive OpenSSL-QUIC-Serverinstanz voraus. services/api-python betreibt keinen QUIC-Server (keine QUIC-Bibliothek, uvicorn ohne --ssl-keyfile, TLS extern terminiert) — der Codepfad ist im Prozess nicht erreichbar."
+      "status_notes": "fix.state=fixed laut grype, Debian Security Tracker bestätigt: für trixie weiterhin ungefixt, kein Backport geplant. Double-Free in port_default_packet_handler()/port_bind_channel() (QUIC Record-Layer RX), auslösbar durch ein RFC-9000-widriges QUIC-INITIAL-Paket mit zu kurzer Destination-Connection-ID. Wie bei CVE-2026-14456: setzt eine aktive OpenSSL-QUIC-Serverinstanz voraus. services/api-python betreibt keinen QUIC-Server (keine QUIC-Bibliothek, uvicorn ohne --ssl-keyfile, TLS extern terminiert) und initiiert auch ausgehend kein TLS: httpx ist nur dev-Dependency, `uv sync --locked --no-dev` installiert sie nicht (verifiziert gegen die Image-SBOM: kein httpx/httpcore-Component). Der Codepfad ist im Prozess weder eingehend noch ausgehend erreichbar."
     },
     {
       "vulnerability": { "name": "CVE-2026-54874" },
@@ -69,7 +67,7 @@
       ],
       "status": "not_affected",
       "justification": "vulnerable_code_not_in_execute_path",
-      "status_notes": "fix.state=fixed laut grype, Debian Security Tracker bestätigt: für trixie weiterhin ungefixt, kein Backport geplant. Speicher-Amplifikation (~1200x) durch übermäßiges Puffern von DTLS-Records künftiger Epochen während eines laufenden DTLS-Handshakes (UDP-basiert). services/api-python spricht ausschließlich TCP-basiertes HTTP über uvicorn/httptools/websockets — keine der genutzten Bibliotheken (siehe uv.lock) implementiert DTLS, und es findet zu keinem Zeitpunkt ein DTLS-Handshake statt. Der betroffene Codepfad wird nie durchlaufen."
+      "status_notes": "fix.state=fixed laut grype, Debian Security Tracker bestätigt: für trixie weiterhin ungefixt, kein Backport geplant. Speicher-Amplifikation (~1200x) durch übermäßiges Puffern von DTLS-Records künftiger Epochen während eines laufenden DTLS-Handshakes (UDP-basiert). services/api-python spricht ausschließlich TCP-basiertes HTTP über uvicorn/httptools/websockets — keine der genutzten Bibliotheken (siehe uv.lock) implementiert DTLS, und es findet zu keinem Zeitpunkt ein DTLS-Handshake statt, weder eingehend noch ausgehend. Ausgehend käme ohnehin nur httpx als TLS-Client-Bibliothek infrage — die aber nur dev-Dependency ist und im Produktions-Image nicht installiert wird (verifiziert gegen die Image-SBOM: kein httpx/httpcore-Component). Der betroffene Codepfad wird nie durchlaufen."
     },
     {
       "vulnerability": { "name": "CVE-2026-63072" },
@@ -80,7 +78,7 @@
       ],
       "status": "not_affected",
       "justification": "vulnerable_code_not_in_execute_path",
-      "status_notes": "fix.state=fixed laut grype, Debian Security Tracker bestätigt: für trixie weiterhin ungefixt, kein Backport geplant. 8-Byte-Out-of-Bounds-Heap-Write in CMS_decrypt() beim Entschlüsseln von CMS-Nachrichten (Cryptographic Message Syntax / S-MIME) mit der AES-WRAP-PAD-Variante. services/api-python enthält keine CMS-/S-MIME-Bibliothek (kein pyopenssl, keine cryptography-CMS-Nutzung in uv.lock) und Pythons ssl-Modul bindet keine CMS-Funktionen von OpenSSL ein — CMS_decrypt() wird von diesem Prozess unter keinen Umständen aufgerufen."
+      "status_notes": "fix.state=fixed laut grype, Debian Security Tracker bestätigt: für trixie weiterhin ungefixt, kein Backport geplant. 8-Byte-Out-of-Bounds-Heap-Write in CMS_decrypt() beim Entschlüsseln von CMS-Nachrichten (Cryptographic Message Syntax / S-MIME) mit der AES-WRAP-PAD-Variante. services/api-python enthält keine CMS-/S-MIME-Bibliothek (kein pyopenssl, keine cryptography-CMS-Nutzung in uv.lock) und Pythons ssl-Modul bindet keine CMS-Funktionen von OpenSSL ein — weder für eingehende noch für ausgehende Verbindungen (letztere fänden ohnehin nicht statt: httpx ist nur dev-Dependency und im Produktions-Image laut SBOM nicht installiert). CMS_decrypt() wird von diesem Prozess unter keinen Umständen aufgerufen."
     }
   ]
 }
