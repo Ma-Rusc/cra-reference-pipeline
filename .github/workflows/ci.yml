@@ -65,6 +65,23 @@ jobs:
           fi
           echo "Nicht-Root bestätigt: Config.User=$user"
 
+      - name: "Smoke-Test: Container starten"
+        # Nur Portfreigabe, kein --privileged, kein Host-Volume-Mount.
+        run: |
+          if [ "${{ matrix.service }}" = "api-python" ]; then PORT=8000; else PORT=3000; fi
+          echo "SMOKE_PORT=$PORT" >> "$GITHUB_ENV"
+          docker run -d --name smoke -p "$PORT:$PORT" "$IMAGE_REF"
+
+      - name: "Smoke-Test: /version prüfen"
+        run: |
+          sleep 5
+          docker logs smoke || true
+          curl -sf "localhost:$SMOKE_PORT/version"
+
+      - name: "Smoke-Test: Container aufräumen"
+        if: always()
+        run: docker rm -f smoke || true
+
       - name: Image als Archiv sichern
         run: docker save "$IMAGE_REF" -o image.tar
 

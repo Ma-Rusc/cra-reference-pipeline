@@ -143,6 +143,7 @@ vex/                     # OpenVEX-Statements
 docs/cra/
   traceability.md        # CRA-Anforderung -> Job -> Nachweis (Kerndokument)
   plattform-grenzen.md   # was GitHub Free nicht kann und warum
+  trade-offs.md           # Basisimage-Vergleich je Service, Begründung
 SECURITY.md              # Coordinated Vulnerability Disclosure
 SUPPORT.md               # Supportzeitraum, Update-Politik
 .well-known/security.txt

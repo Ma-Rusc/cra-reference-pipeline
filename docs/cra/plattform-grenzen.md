@@ -52,6 +52,24 @@ CodeQL-Workflow existiert (kommt erst mit Stufe 1/3). Ob das erste PRs
 blockiert, wird beobachtet und hier nachgetragen, sobald es sich zeigt —
 nicht im Voraus als gelöst behauptet.
 
+### Lokales `docker run` vs. CI-Runner
+
+Im lokalen Agenten-Arbeitsumfeld ist `docker run` als Sicherheitsgrenze der
+Betriebsumgebung gesperrt — schützt die Arbeitsmaschine der Entwicklerin
+davor, dass ein Agent beliebige Container ausführt. Das ist keine
+Repo-Einstellung, sondern eine Grenze der lokalen Session; genau deswegen
+musste die Stufe-3.5-Minimal-Image-Untersuchung
+([trade-offs.md](trade-offs.md)) von "lokal bauen und starten" auf
+"über die Pipeline verifizieren" umgestellt werden.
+
+Der GitHub-Actions-Runner ist dagegen eine vollständig isolierte, nach
+jedem Job weggeworfene Einweg-VM — eine andere Vertrauensgrenze. Deshalb
+dürfen dort `docker run`-basierte Schritte (syft, grype, gitleaks, der
+Smoke-Test im `build`-Job) frei laufen, ohne dass das ein Widerspruch zur
+lokalen Sperre wäre: Was auf der eigenen Arbeitsmaschine ein Risiko ist
+(unkontrollierte Ausführung, persistente Seiteneffekte), ist auf einer
+Wegwerf-VM ohne Anschluss an die lokale Umgebung keins.
+
 ### Was ein höherer Tier zusätzlich könnte
 
 Mit GitHub Team/Enterprise: Org-weites Audit-Log, Org-Rulesets, erzwungene
