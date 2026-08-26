@@ -82,6 +82,26 @@ das rückwirkend zu verengen ist kein Sicherheitsgewinn ohne echten
 Bedrohungsvermittler (Wegwerf-VM, siehe oben) und war nicht Teil dieser
 Änderung, wird hier aber nicht verschwiegen.
 
+### `policy`-Job endet für api-python absichtlich rot (Abweichung von Regel 12)
+
+CLAUDE.md, harte Regel 12: "Ein Job pro PR. Inkrementell aufbauen, jeder Job
+wird grün gesehen, bevor der nächste entsteht." Der `policy`-Job aus Stufe 4
+verletzt das für `policy (api-python)` bewusst: nur die Paketgruppen
+`perl-base` und `libc6` sind bewertet (siehe
+[traceability.md](traceability.md)), rund 15 weitere Pakete mit
+high/critical-Funden sind es nicht — das Gate bricht deshalb korrekt ab statt
+grün durchzulaufen.
+
+Begründung, warum das hier keine stillschweigende Regelverletzung ist,
+sondern eine bewusste Abweichung: PLAN.md fordert für Stufe 4 ausdrücklich,
+"bewusst eine echte CVE stehen zu lassen und durchzubewerten — damit man
+sieht, wie der Mechanismus im Ernstfall aussieht". Ein Gate, das beim ersten
+Lauf grün ist, hätte diesen Fall nie gezeigt. Die Konsequenz wird begrenzt,
+nicht verschwiegen: `policy` ist deshalb bewusst **kein** erforderlicher
+Status-Check im Ruleset (`id 19179030`) — ein rotes, nicht erzwungenes Gate
+sperrt `main` nicht. Erst nach einem Folge-PR, der die restlichen Pakete
+bewertet, wird `policy` zum Ruleset ergänzt und Regel 12 wieder eingehalten.
+
 ### Was ein höherer Tier zusätzlich könnte
 
 Mit GitHub Team/Enterprise: Org-weites Audit-Log, Org-Rulesets, erzwungene
