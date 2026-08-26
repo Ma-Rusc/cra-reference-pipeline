@@ -47,3 +47,36 @@ Kein automatisierter Reminder ist eingerichtet (das wäre über den Umfang
 dieses Referenzprojekts hinaus) — die nächste Gelegenheit, den Prozess
 tatsächlich anzuwenden, ist der für Stufe 4 bereits angekündigte Folge-PR,
 der die restlichen unbewerteten Pakete durchgeht.
+
+## Verifikation (Stufe 4)
+
+Zwei Eigenschaften des Gates wurden nicht nur behauptet, sondern live in
+CI beobachtet:
+
+**(1) Baustein-3-Fehlerinjektion — der Schutz gegen stillen Fehlschlag
+greift wirklich.** `vex/perl-base.openvex.json` wurde in einem eigenen
+Commit absichtlich auf ein leeres `{"statements": []}` reduziert und
+gepusht. Ergebnis in
+[Run 32948581758](https://github.com/Ma-Rusc/cra-reference-pipeline/actions/runs/32948581758):
+beide Matrix-Legs (`policy (api-python)` und `policy (web-node)`) brachen
+mit `::error::vex/perl-base.openvex.json ist kein valides OpenVEX-Dokument
+(fehlendes/leeres statements-Array)` ab — eine leere/kaputte VEX-Datei
+wurde nicht stillschweigend als "keine Einschränkungen" durchgereicht.
+Der Testcommit wurde anschließend per `git revert` zurückgenommen (beide
+Commits bleiben in der Historie sichtbar, kein Force-Push).
+
+**(2) Trennschärfe des paketnamen-basierten Matches — keine Überdeckung.**
+Der Match in `policy/vex_gate.rego` vergleicht Paketnamen, nicht exakte
+purls (siehe oben) — das birgt grundsätzlich ein Überdeckungsrisiko, falls
+zwei VEX-Dateien versehentlich denselben oder einen zu unscharf erkannten
+Paketnamen abdecken. In
+[Run 32950302143](https://github.com/Ma-Rusc/cra-reference-pipeline/actions/runs/32950302143)
+erzeugte das Gate für api-python genau 15 `warn`-Meldungen (12 für
+`perl-base`, 3 für `libc6`) und keine einzige davon für ein anderes Paket
+— lokal mit den echten Job-Daten (identische grype-JSON- und
+VEX-Combined-Eingabe) nachgerechnet und mit dem tatsächlichen
+conftest-Exit-Code des Laufs abgeglichen. Kein `deny` wegen
+"mehrdeutige VEX-Abdeckung" trat auf. Für die aktuellen Paketnamen ist der
+Match damit nachweislich präzise — das bleibt eine laufende Eigenschaft,
+die bei jeder neuen VEX-Datei erneut gilt, nicht ein einmalig bewiesenes
+Faktum.
