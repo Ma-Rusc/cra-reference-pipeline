@@ -1,0 +1,36 @@
+{
+  "@context": "https://openvex.dev/ns/v0.2.0",
+  "@id": "https://github.com/Ma-Rusc/cra-reference-pipeline/vex/python-runtime",
+  "author": "https://github.com/Ma-Rusc/cra-reference-pipeline",
+  "timestamp": "2026-08-26T12:00:00Z",
+  "version": 1,
+  "statements": [
+    {
+      "vulnerability": { "name": "CVE-2026-3644" },
+      "products": [
+        { "@id": "pkg:generic/python@3.12.14" }
+      ],
+      "status": "not_affected",
+      "justification": "vulnerable_code_not_present",
+      "status_notes": "grype meldet fix.state=fixed. NVD nennt explizit 'fixed in Python 3.12.14' (unvollständiger Fix für CVE-2026-0672: Kontrollzeichen in http.cookies.Morsel.update()/|=-Operator/Unpickling konnten die Eingabevalidierung umgehen). Das Image ist per Digest-Bump exakt auf Python 3.12.14 (verifiziert über grype-artifact.version und Image-Metadaten org.opencontainers.image.version=3.12.14-slim-trixie). Die Meldung ist ein Scanner-Erfassungsartefakt — die verwundbare Codeversion ist im installierten Interpreter nicht mehr vorhanden."
+    },
+    {
+      "vulnerability": { "name": "CVE-2026-4224" },
+      "products": [
+        { "@id": "pkg:generic/python@3.12.14" }
+      ],
+      "status": "not_affected",
+      "justification": "vulnerable_code_not_present",
+      "status_notes": "grype meldet fix.state=fixed. NVD nennt explizit 'fixed in Python 3.12.14' (C-Stack-Overflow in Expat bei tief verschachteltem Inline-DOCTYPE mit registriertem ElementDeclHandler). Installierte Version ist exakt 3.12.14 — Scanner-Erfassungsartefakt, kein offener Fund."
+    },
+    {
+      "vulnerability": { "name": "CVE-2026-7210" },
+      "products": [
+        { "@id": "pkg:generic/python@3.12.14" }
+      ],
+      "status": "not_affected",
+      "justification": "vulnerable_code_not_present",
+      "status_notes": "grype meldet fix.state=fixed. NVD nennt explizit 'fixed in Python 3.12.14' (unzureichende Entropie im Expat-Hash-Flooding-Schutz in xml.parsers.expat/xml.etree.ElementTree). Installierte Version ist exakt 3.12.14 — Scanner-Erfassungsartefakt, kein offener Fund."
+    }
+  ]
+}

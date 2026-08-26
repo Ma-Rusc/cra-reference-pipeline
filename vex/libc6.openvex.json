@@ -3,7 +3,8 @@
   "@id": "https://github.com/Ma-Rusc/cra-reference-pipeline/vex/libc6",
   "author": "https://github.com/Ma-Rusc/cra-reference-pipeline",
   "timestamp": "2026-08-26T00:00:00Z",
-  "version": 1,
+  "last_updated": "2026-08-26T12:00:00Z",
+  "version": 2,
   "statements": [
     {
       "vulnerability": { "name": "CVE-2010-4756" },
@@ -72,26 +73,29 @@
     {
       "vulnerability": { "name": "CVE-2026-5435" },
       "products": [
-        { "@id": "pkg:deb/debian/libc6@2.41-12%2Bdeb13u3?arch=amd64&distro=debian-13.6&upstream=glibc" }
+        { "@id": "pkg:deb/debian/libc6@2.41-12%2Bdeb13u3?arch=amd64&distro=debian-13.6&upstream=glibc" },
+        { "@id": "pkg:deb/debian/libc-bin@2.41-12%2Bdeb13u3?arch=amd64&distro=debian-13.6&upstream=glibc" }
       ],
       "status": "affected",
-      "status_notes": "fix.state=wont-fix laut grype. NVD: CVSS3.1 AV:N/AC:L/PR:N (7.3 High) — Out-of-bounds Write in den veralteten Funktionen ns_printrrf/ns_printrr/fp_nquery beim Ausgeben von TSIG-DNS-Records. Netzwerk-Attackvector setzt aber voraus, dass die Anwendung diese veralteten Debug-Print-Funktionen selbst aufruft; die reguläre DNS-Auflösung von Python/uvicorn läuft über getaddrinfo(), nicht über diese Funktionsfamilie. services/api-python ruft keine ns_print*/fp_nquery-Funktionen auf. Kompensierender Faktor: Der Netzwerk-Angriffsvektor der CVSS-Bewertung setzt einen Aufrufpfad voraus, der im Produktcode nicht existiert."
+      "status_notes": "fix.state=wont-fix laut grype, gilt identisch für libc6 und libc-bin (dasselbe glibc-Quellpaket, dieselbe Version 2.41-12+deb13u3). NVD: CVSS3.1 AV:N/AC:L/PR:N (7.3 High) — Out-of-bounds Write in den veralteten Funktionen ns_printrrf/ns_printrr/fp_nquery beim Ausgeben von TSIG-DNS-Records. Netzwerk-Attackvector setzt aber voraus, dass die Anwendung diese veralteten Debug-Print-Funktionen selbst aufruft; die reguläre DNS-Auflösung von Python/uvicorn läuft über getaddrinfo(), nicht über diese Funktionsfamilie. services/api-python ruft keine ns_print*/fp_nquery-Funktionen auf. Kompensierender Faktor: Der Netzwerk-Angriffsvektor der CVSS-Bewertung setzt einen Aufrufpfad voraus, der im Produktcode nicht existiert."
     },
     {
       "vulnerability": { "name": "CVE-2026-5450" },
       "products": [
-        { "@id": "pkg:deb/debian/libc6@2.41-12%2Bdeb13u3?arch=amd64&distro=debian-13.6&upstream=glibc" }
+        { "@id": "pkg:deb/debian/libc6@2.41-12%2Bdeb13u3?arch=amd64&distro=debian-13.6&upstream=glibc" },
+        { "@id": "pkg:deb/debian/libc-bin@2.41-12%2Bdeb13u3?arch=amd64&distro=debian-13.6&upstream=glibc" }
       ],
       "status": "affected",
-      "status_notes": "fix.state=wont-fix laut grype. NVD: CVSS3.1 AV:N/AC:L/PR:N (9.8 Critical) — Ein-Byte-Heap-Overflow beim Aufruf der scanf-Familie mit '%mc'-Formatangabe und Breitenangabe > 1024. Python parst Anwendungs-/HTTP-Eingaben nicht über glibcs scanf()-Familie (CPython nutzt eigene Parser für str/JSON/Formulardaten); der verwundbare C-API-Aufruf mit dieser spezifischen Formatangabe kommt im Anwendungscode nicht vor. Kompensierender Faktor: trotz kritischer CVSS-Einstufung fehlt der Aufrufpfad vollständig, da die Schwachstelle einen expliziten, hier nicht vorhandenen scanf-Aufruf mit gefährlicher Formatangabe voraussetzt."
+      "status_notes": "fix.state=wont-fix laut grype, gilt identisch für libc6 und libc-bin (dasselbe glibc-Quellpaket, dieselbe Version). NVD: CVSS3.1 AV:N/AC:L/PR:N (9.8 Critical) — Ein-Byte-Heap-Overflow beim Aufruf der scanf-Familie mit '%mc'-Formatangabe und Breitenangabe > 1024. Python parst Anwendungs-/HTTP-Eingaben nicht über glibcs scanf()-Familie (CPython nutzt eigene Parser für str/JSON/Formulardaten); der verwundbare C-API-Aufruf mit dieser spezifischen Formatangabe kommt im Anwendungscode nicht vor. Kompensierender Faktor: trotz kritischer CVSS-Einstufung fehlt der Aufrufpfad vollständig, da die Schwachstelle einen expliziten, hier nicht vorhandenen scanf-Aufruf mit gefährlicher Formatangabe voraussetzt."
     },
     {
       "vulnerability": { "name": "CVE-2026-5928" },
       "products": [
-        { "@id": "pkg:deb/debian/libc6@2.41-12%2Bdeb13u3?arch=amd64&distro=debian-13.6&upstream=glibc" }
+        { "@id": "pkg:deb/debian/libc6@2.41-12%2Bdeb13u3?arch=amd64&distro=debian-13.6&upstream=glibc" },
+        { "@id": "pkg:deb/debian/libc-bin@2.41-12%2Bdeb13u3?arch=amd64&distro=debian-13.6&upstream=glibc" }
       ],
       "status": "affected",
-      "status_notes": "fix.state=wont-fix laut grype. NVD: CVSS3.1 AV:N/AC:L/PR:N (7.5 High) — Buffer-Under-read in ungetwc() (_IO_wdefault_pbackfail, libio/wgenops.c) bei Wide-Char-Streams mit überlappenden Ein-/Mehrbyte-Kodierungen. CPython verwendet für seine eigene I/O-Schicht (Sockets, HTTP-Requests über uvicorn) nicht glibcs Wide-Char-Stream-API (ungetwc/FILE*), sondern eigene gepufferte I/O. Kompensierender Faktor: der betroffene Funktionsaufruf kommt im Anwendungsprozess nicht vor."
+      "status_notes": "fix.state=wont-fix laut grype, gilt identisch für libc6 und libc-bin (dasselbe glibc-Quellpaket, dieselbe Version). NVD: CVSS3.1 AV:N/AC:L/PR:N (7.5 High) — Buffer-Under-read in ungetwc() (_IO_wdefault_pbackfail, libio/wgenops.c) bei Wide-Char-Streams mit überlappenden Ein-/Mehrbyte-Kodierungen. CPython verwendet für seine eigene I/O-Schicht (Sockets, HTTP-Requests über uvicorn) nicht glibcs Wide-Char-Stream-API (ungetwc/FILE*), sondern eigene gepufferte I/O. Kompensierender Faktor: der betroffene Funktionsaufruf kommt im Anwendungsprozess nicht vor."
     },
     {
       "vulnerability": { "name": "CVE-2026-6238" },
