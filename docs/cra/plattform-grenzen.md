@@ -70,6 +70,18 @@ lokalen Sperre wäre: Was auf der eigenen Arbeitsmaschine ein Risiko ist
 (unkontrollierte Ausführung, persistente Seiteneffekte), ist auf einer
 Wegwerf-VM ohne Anschluss an die lokale Umgebung keins.
 
+Das erlaubt einen breiten Bind-Mount (`-v "$PWD:/work"`), macht ihn aber
+nicht automatisch die richtige Wahl. Ab Stufe 4 (Policy-Gate) bekommen neue
+`docker run`-Aufrufe möglichst enge, wo sinnvoll read-only Mounts — die
+zweite grype-Ausgabe im `scan`-Job mountet nur die SBOM-Datei (`:ro`) und
+`reports/`, der `conftest`-Aufruf im `policy`-Job mountet `policy/` und
+`reports/` beide `:ro`, da conftest nichts schreibt. Ehrlich dazu: die
+bereits bestehenden Stufe-3-Schritte (SARIF-Erzeugung mit grype, osv-scanner,
+semgrep, trivy) laufen weiterhin mit dem breiteren `-v "$PWD:/work"`-Mount —
+das rückwirkend zu verengen ist kein Sicherheitsgewinn ohne echten
+Bedrohungsvermittler (Wegwerf-VM, siehe oben) und war nicht Teil dieser
+Änderung, wird hier aber nicht verschwiegen.
+
 ### Was ein höherer Tier zusätzlich könnte
 
 Mit GitHub Team/Enterprise: Org-weites Audit-Log, Org-Rulesets, erzwungene

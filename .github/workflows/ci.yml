@@ -219,6 +219,29 @@ jobs:
           sarif_file: reports/grype-${{ matrix.service }}.sarif
           category: grype-${{ matrix.service }}
 
+      - name: grype gegen Image-SBOM (JSON für das Policy-Gate)
+        # Enger Mount als beim SARIF-Schritt oben: SBOM read-only, nur
+        # reports/ beschreibbar, kein Zugriff auf den Rest des Workspace.
+        # Der bestehende SARIF-Schritt bleibt bewusst unverändert (Stufe 3,
+        # außerhalb des Scopes dieser Änderung).
+        run: |
+          docker run --rm \
+            -v "$PWD/${{ matrix.service }}-image.cdx.json:/work/${{ matrix.service }}-image.cdx.json:ro" \
+            -v "$PWD/reports:/work/reports" \
+            -w /work \
+            anchore/grype@sha256:ddf9e9f204049f3a4a0955ef70873cabab6a31432125ad4f20a490b54950a253 \
+            sbom:/work/${{ matrix.service }}-image.cdx.json \
+            -o json=/work/reports/grype-${{ matrix.service }}.json
+
+      - name: grype-JSON als Artefakt hochladen
+        # Kurzlebiges Zwischenartefakt für den policy-Job im selben Workflow-
+        # Lauf, gleiches Muster wie image-<service>.tar.
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: grype-json-${{ matrix.service }}
+          path: reports/grype-${{ matrix.service }}.json
+          retention-days: 1
+
       - name: osv-scanner gegen Lockfile
         # osv-scanner beendet sich per Default mit Exit-Code 1 bei Funden.
         # Stufe 3 sammelt nur (Gate kommt in Stufe 4), daher || true.
