@@ -293,6 +293,12 @@ jobs:
     permissions:
       contents: read
     strategy:
+      # fail-fast: false ist hier kein Stilmittel, sondern notwendig: dieser
+      # PR lässt policy (api-python) bewusst rot enden (siehe Kontext oben),
+      # ohne dieses Flag würde GitHub Actions policy (web-node) daraufhin
+      # abbrechen (cancelled), bevor dessen echtes, erwartet grünes Ergebnis
+      # überhaupt beobachtbar ist.
+      fail-fast: false
       matrix:
         service: [api-python, web-node]
     steps:
