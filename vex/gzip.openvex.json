@@ -1,0 +1,18 @@
+{
+  "@context": "https://openvex.dev/ns/v0.2.0",
+  "@id": "https://github.com/Ma-Rusc/cra-reference-pipeline/vex/gzip",
+  "author": "https://github.com/Ma-Rusc/cra-reference-pipeline",
+  "timestamp": "2026-08-26T12:00:00Z",
+  "version": 1,
+  "statements": [
+    {
+      "vulnerability": { "name": "CVE-2026-41992" },
+      "products": [
+        { "@id": "pkg:deb/debian/gzip@1.13-1?arch=amd64&distro=debian-13.6" }
+      ],
+      "status": "not_affected",
+      "justification": "vulnerable_code_not_in_execute_path",
+      "status_notes": "fix.state=wont-fix laut grype (Debian trixie: no-dsa, weiterhin auf 1.13-1, Fix erst ab 1.14-1 in sid). Global-Buffer-Overflow im LZH-Dekompressions-Pfad des gzip/gunzip-Binaries: gemeinsamer globaler Zustand zwischen LZ77-, LZW- und LZH-Routinen wird zwischen Dateien einer Invocation nicht zurückgesetzt, auslösbar durch eine präparierte LZW- gefolgt von einer präparierten LZH-Datei in einem einzigen gzip-Aufruf. services/api-python ruft das externe gzip/gunzip-Binary an keiner Stelle auf (kein subprocess-/os.system-/shell=True-Aufruf im Anwendungscode, keine Kompressions-Middleware wie GZipMiddleware in app/main.py). Der verwundbare Dekompressions-Codepfad wird nie erreicht."
+    }
+  ]
+}

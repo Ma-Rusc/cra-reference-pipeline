@@ -1,0 +1,29 @@
+{
+  "@context": "https://openvex.dev/ns/v0.2.0",
+  "@id": "https://github.com/Ma-Rusc/cra-reference-pipeline/vex/ncurses",
+  "author": "https://github.com/Ma-Rusc/cra-reference-pipeline",
+  "timestamp": "2026-08-26T12:00:00Z",
+  "version": 1,
+  "statements": [
+    {
+      "vulnerability": { "name": "CVE-2025-69720" },
+      "products": [
+        { "@id": "pkg:deb/debian/ncurses-bin@6.5%2B20250216-2?arch=amd64&distro=debian-13.6&upstream=ncurses" }
+      ],
+      "status": "not_affected",
+      "justification": "vulnerable_code_not_in_execute_path",
+      "status_notes": "fix.state=wont-fix laut grype, Debian trixie weiterhin vulnerable (Fix erst ab ncurses 6.5-20251213). Stack-basierter Buffer-Overflow konkret in analyze_string() innerhalb progs/infocmp.c — Teil des interaktiven infocmp-Kommandozeilenwerkzeugs, das mit präpariertem Terminfo-Input aufgerufen werden muss (NVD: User Interaction Required). ncurses-bin enthält den infocmp-Binary tatsächlich (dpkg-Dateiliste geprüft: /usr/bin/infocmp), services/api-python führt infocmp jedoch nie aus (kein subprocess-/os.system-/shell=True-Aufruf im Anwendungscode). Das Binary ist vorhanden, aber der Aufrufpfad fehlt."
+    },
+    {
+      "vulnerability": { "name": "CVE-2025-69720" },
+      "products": [
+        { "@id": "pkg:deb/debian/ncurses-base@6.5%2B20250216-2?arch=all&distro=debian-13.6&upstream=ncurses" },
+        { "@id": "pkg:deb/debian/libtinfo6@6.5%2B20250216-2?arch=amd64&distro=debian-13.6&upstream=ncurses" },
+        { "@id": "pkg:deb/debian/libncursesw6@6.5%2B20250216-2?arch=amd64&distro=debian-13.6&upstream=ncurses" }
+      ],
+      "status": "not_affected",
+      "justification": "vulnerable_code_not_present",
+      "status_notes": "fix.state=wont-fix laut grype, Debian trixie weiterhin vulnerable. Die verwundbare Funktion analyze_string() ist Teil von progs/infocmp.c, dem Quellcode des infocmp-Kommandozeilenprogramms — nicht Teil der ncurses-Laufzeitbibliotheken. Debian-Paketinhalte geprüft (packages.debian.org, Dateilisten trixie/amd64): ncurses-base enthält nur Terminfo-Datendateien (/usr/share/terminfo, /usr/share/tabset), libtinfo6 und libncursesw6 enthalten ausschließlich Shared-Library-Dateien (libtinfo.so.6, libncursesw.so.6 u. a.) — kein infocmp-Binary, keine analyze_string()-Funktion in diesen drei Paketen. Die verwundbare Funktion existiert dort schlicht nicht (anders als bei ncurses-bin, das infocmp tatsächlich enthält, aber nicht ausführt — siehe separates Statement)."
+    }
+  ]
+}

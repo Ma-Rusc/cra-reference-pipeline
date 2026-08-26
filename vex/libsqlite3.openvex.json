@@ -1,0 +1,27 @@
+{
+  "@context": "https://openvex.dev/ns/v0.2.0",
+  "@id": "https://github.com/Ma-Rusc/cra-reference-pipeline/vex/libsqlite3",
+  "author": "https://github.com/Ma-Rusc/cra-reference-pipeline",
+  "timestamp": "2026-08-26T12:00:00Z",
+  "version": 1,
+  "statements": [
+    {
+      "vulnerability": { "name": "CVE-2026-11822" },
+      "products": [
+        { "@id": "pkg:deb/debian/libsqlite3-0@3.46.1-7%2Bdeb13u1?arch=amd64&distro=debian-13.6&upstream=sqlite3" }
+      ],
+      "status": "not_affected",
+      "justification": "vulnerable_code_not_in_execute_path",
+      "status_notes": "fix.state=wont-fix laut grype (Debian trixie: no-dsa, weiterhin auf 3.46.1-7+deb13u1, Fix erst ab 3.53.2 in forky/sid). Out-of-bounds Read in fts5LeafSeek() der FTS5-Volltextsuche-Erweiterung, ausgelöst durch fehlerhafte FTS5-Page-Daten bei FTS5-MATCH-Abfragen. libsqlite3-0 ist ausschließlich eine transitive Abhängigkeit des in CPython eingebauten sqlite3-Moduls; services/api-python (fastapi, uvicorn, pydantic — siehe uv.lock) importiert das sqlite3-Modul an keiner Stelle (grep über services/api-python/app bestätigt keinen Treffer für 'sqlite3'), erstellt keine Datenbankverbindung und nutzt folglich auch keine FTS5-Erweiterung. Der Funktionsaufruf fts5LeafSeek() wird vom Prozess nie erreicht."
+    },
+    {
+      "vulnerability": { "name": "CVE-2026-11824" },
+      "products": [
+        { "@id": "pkg:deb/debian/libsqlite3-0@3.46.1-7%2Bdeb13u1?arch=amd64&distro=debian-13.6&upstream=sqlite3" }
+      ],
+      "status": "not_affected",
+      "justification": "vulnerable_code_not_in_execute_path",
+      "status_notes": "fix.state=wont-fix laut grype (Debian trixie: no-dsa, Fix erst ab 3.53.2 in forky/sid). Heap-Buffer-Overflow in fts5ChunkIterate() der FTS5-Erweiterung durch Integer-Underflow bei präparierten Continuation-Page-Metadaten (szLeaf < 4). Gleiche Begründung wie CVE-2026-11822: services/api-python importiert das sqlite3-Modul nicht und nutzt keine Datenbank, die FTS5-Erweiterung wird nie initialisiert."
+    }
+  ]
+}

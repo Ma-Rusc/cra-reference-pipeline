@@ -12,22 +12,28 @@ zugehörigen Jobs existieren.
 | Anhang I Teil II Nr. 1 (Komponenten identifizieren, SBOM bereitstellen) | `sbom` | CycloneDX-SBOM je Service, Quelle + Image (`sbom-<service>-source`, `sbom-<service>-image`), 90 Tage Retention | erfüllt |
 | Anhang I Teil I Nr. 3 (sichere Voreinstellungen) — Non-Root-Container | — | `USER`-Direktive je Dockerfile, verifiziert mit `docker run --rm <image> id` | Teilweise — Voreinstellung, zur Laufzeit mit `--user root` überschreibbar; deckt nur Non-Root ab, nicht alle Aspekte von "secure by default" |
 | Anhang I Teil II Nr. 3 (regelmäßige Tests auf Schwachstellen) | `scan` | SARIF im Code Scanning (grype, osv-scanner, semgrep — je Service, 6 Kategorien) | erfüllt |
-| Anhang I Teil I Nr. 2 (keine bekannten ausnutzbaren Schwachstellen bei Auslieferung) | `policy` | conftest-Gate-Log (`$GITHUB_STEP_SUMMARY`) + VEX-Statements (`vex/`) | Teilweise — siehe Einschränkungen unten |
+| Anhang I Teil I Nr. 2 (keine bekannten ausnutzbaren Schwachstellen bei Auslieferung) | `policy` | conftest-Gate-Log (`$GITHUB_STEP_SUMMARY`) + VEX-Statements (`vex/`) | erfüllt — siehe Einschränkungen unten |
 
 **Einschränkungen (`policy`-Job):**
 
-- **Gate-Abdeckung unvollständig.** Bei api-python sind aktuell nur die
-  Paketgruppen `perl-base` (17 CVEs, `not_affected`) und `libc6` (14 CVEs,
-  `affected`, je CVE einzeln recherchiert) bewertet. Rund 15 weitere Pakete
-  mit high/critical-Funden (`python`-Interpreter, `openssl`/`libssl3t64`,
-  `libsqlite3-0`, `tar`, `libacl1`, die `ncurses`-Gruppe, `gzip`,
-  `coreutils`, sowie ein Anwendungsfund `GHSA-wf93-45jw-7689-pip`) sind
-  unbewertet und lassen `policy (api-python)` bewusst fehlschlagen — der in
-  PLAN.md geforderte Fall, eine echte, unbewertete CVE stehen zu lassen.
-  Ein Folge-PR bewertet die restlichen Pakete durch.
-- **`policy` ist kein erforderlicher Status-Check.** Solange die Abdeckung
-  unvollständig ist, würde ein required Check `main` dauerhaft sperren.
-  Wird erst nach dem Folge-PR zum Ruleset (`id 19179030`) ergänzt.
+- **Abdeckung bei api-python vollständig, aber Weg zur Grün-Schaltung
+  gemischt.** Von den ursprünglich 26 in Stufe 4 offen gelassenen CVEs
+  wurden 17 (python-Interpreter, openssl/openssl-provider-legacy/
+  libssl3t64) durch einen Digest-Bump von `python:3.12-slim` gelöst, nicht
+  durch VEX — ein verfügbarer Fix schlägt eine Begründung, warum man ihn
+  nicht nutzt (siehe Commit-Historie des Folge-PRs). Die verbleibenden 9
+  CVEs (`libc-bin`/`libc6`, `ncurses`-Gruppe, `libsqlite3-0`, `libacl1`,
+  `gzip`) sind einzeln recherchiert per VEX bewertet
+  ([`vex/README.md`](../../vex/README.md)). Zusätzlich wurden bei der
+  Recherche 6 der 17 Digest-Bump-Fälle als Scanner-Erfassungsartefakte
+  identifiziert (grype meldete sie trotz bereits installierter Fix-Version
+  weiter, mit Debian-Tracker/NVD gegengeprüft) — dokumentiert in
+  `vex/openssl.openvex.json` und `vex/python-runtime.openvex.json`, nicht
+  stillschweigend als "durch den Bump gelöst" verbucht.
+- **`policy` ist weiterhin kein erforderlicher Status-Check.** Auch mit
+  grünem Gate wurde das Ruleset (`id 19179030`) in diesem PR bewusst nicht
+  angefasst — ausdrückliche Vorgabe, das Nachziehen ist ein separater,
+  späterer Schritt.
 - **Gate matcht Paketname, nicht Version.** `policy/vex_gate.rego` matcht
   VEX-Statements gegen den Paketnamen aus dem grype-Fund, nicht gegen die
   exakte im Statement genannte Paketversion. Ein Statement bleibt damit
