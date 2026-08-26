@@ -99,3 +99,28 @@ conftest-Exit-Code des Laufs abgeglichen. Kein `deny` wegen
 Match damit nachweislich präzise — das bleibt eine laufende Eigenschaft,
 die bei jeder neuen VEX-Datei erneut gilt, nicht ein einmalig bewiesenes
 Faktum.
+
+**(3) Folge-PR: `policy (api-python)` grün, weiterhin keine
+Überdeckung.** Nach Digest-Bump (python-Interpreter, openssl-Gruppe) und
+sechs neuen VEX-Dateien für die restlichen Pakete ist
+[Run 32969123841](https://github.com/Ma-Rusc/cra-reference-pipeline/actions/runs/32969123841)
+für beide Services grün — auch `policy (api-python)` läuft jetzt
+erfolgreich durch. Lokal mit dem grype-JSON-Artefakt dieses Laufs
+nachgerechnet: 51 `warn`-Meldungen, 0 `deny`, jede davon mit genau einem
+passenden Statement (keine Mehrdeutigkeit trotz deutlich größerer
+Statement-Menge). Aufschlüsselung nach Quelldokument:
+
+| Quelldokument | warn-Meldungen |
+|---|---|
+| `vex/perl-base.openvex.json` | 12 |
+| `vex/libc6.openvex.json` | 6 (3 CVEs × je 2 Produkte: `libc6`, `libc-bin`) |
+| `vex/openssl.openvex.json` | 21 (7 CVEs × je 3 Produkte: `openssl`, `openssl-provider-legacy`, `libssl3t64`) |
+| `vex/python-runtime.openvex.json` | 3 |
+| `vex/ncurses.openvex.json` | 4 (1 CVE × 4 Pakete, über zwei Statements mit unterschiedlicher Begründung) |
+| `vex/libsqlite3.openvex.json` | 2 |
+| `vex/libacl1.openvex.json` | 2 |
+| `vex/gzip.openvex.json` | 1 |
+
+Jede Zeile in dieser Tabelle ist gegen das tatsächliche
+`_source_document`-Feld der lokal nachgerechneten `warn`-Liste geprüft,
+nicht geschätzt.
