@@ -1,0 +1,121 @@
+{
+  "@context": "https://openvex.dev/ns/v0.2.0",
+  "@id": "https://github.com/Ma-Rusc/cra-reference-pipeline/vex/libc6",
+  "author": "https://github.com/Ma-Rusc/cra-reference-pipeline",
+  "timestamp": "2026-08-26T00:00:00Z",
+  "version": 1,
+  "statements": [
+    {
+      "vulnerability": { "name": "CVE-2010-4756" },
+      "products": [
+        { "@id": "pkg:deb/debian/libc6@2.41-12%2Bdeb13u3?arch=amd64&distro=debian-13.6&upstream=glibc" }
+      ],
+      "status": "affected",
+      "status_notes": "Kein Fix im Debian Security Tracker (fix.state=not-fixed laut grype), Debian stuft den Fund selbst als 'unimportant' ein. NVD: glob()-Implementierung kann bei speziell konstruierten, nicht auf Pfade passenden glob-Ausdrücken CPU/Speicher erschöpfen (DoS), CVSS2 AV:N/Au:S (authentifizierter Netzwerk-Aufruf nötig, demonstriert am Beispiel eines FTP-Daemons, der glob() auf STAT-Kommandos anwendet). services/api-python ruft glob() nicht auf Benutzereingaben auf (keine Datei-Pfad-Suche mit Nutzereingaben im Code). Kompensierender Faktor: Angriffsfläche fehlt schlicht, da die verwundbare Funktion vom Anwendungscode nicht mit attacker-controlled Input aufgerufen wird — kein Patch verfügbar, aber auch kein erreichbarer Aufrufpfad."
+    },
+    {
+      "vulnerability": { "name": "CVE-2018-20796" },
+      "products": [
+        { "@id": "pkg:deb/debian/libc6@2.41-12%2Bdeb13u3?arch=amd64&distro=debian-13.6&upstream=glibc" }
+      ],
+      "status": "affected",
+      "status_notes": "Kein Fix im Debian Security Tracker (fix.state=not-fixed), Debian stuft den Fund als 'unimportant' ein. NVD: unkontrollierte Rekursion in check_dst_limits_calc_pos_1 (posix/regexec.c, glibcs POSIX-Regex-Engine), CVSS3 AV:N/AC:L, DoS via crafted Regex-Pattern. Python nutzt für re/regulären-Ausdruck-Verarbeitung sein eigenes, in CPython eingebettetes Regex-Modul (_sre), nicht glibcs POSIX-Regex-API — der verwundbare Codepfad wird von einem reinen Python-/FastAPI-Prozess nicht durchlaufen, außer über einen expliziten C-Aufruf von regexec(), den es im Anwendungscode nicht gibt. Kompensierender Faktor: Sprachebene entkoppelt die Anwendung von der verwundbaren libc-Funktion."
+    },
+    {
+      "vulnerability": { "name": "CVE-2019-1010022" },
+      "products": [
+        { "@id": "pkg:deb/debian/libc6@2.41-12%2Bdeb13u3?arch=amd64&distro=debian-13.6&upstream=glibc" }
+      ],
+      "status": "affected",
+      "status_notes": "Kein Fix (fix.state=not-fixed), von Debian als 'unimportant' geführt. NVD/Sourceware-Bugzilla #22850: 'Mitigation bypass' im nptl-Bestandteil, Umgehung des Stack-Guard-Schutzes — upstream stuft dies ausdrücklich als 'non-security bug, no real threat' ein (disputed), weil ein Mitigation-Bypass für sich genommen keine ausnutzbare Schwachstelle ist, sondern erst in Kombination mit einer separaten, hier nicht vorhandenen Speicherfehler-Schwachstelle relevant würde. Kompensierender Faktor: Der Bypass ist kein eigenständiger Angriffsweg, sondern nur eine Verstärkung eines nicht vorhandenen Primärfehlers; ohne einen solchen Primärfehler im Anwendungscode bleibt die Schutzumgehung wirkungslos."
+    },
+    {
+      "vulnerability": { "name": "CVE-2019-1010023" },
+      "products": [
+        { "@id": "pkg:deb/debian/libc6@2.41-12%2Bdeb13u3?arch=amd64&distro=debian-13.6&upstream=glibc" }
+      ],
+      "status": "affected",
+      "status_notes": "Kein Fix (fix.state=not-fixed), von Debian als 'unimportant' geführt. NVD: Re-Mapping einer bereits geladenen Bibliothek mittels präparierter ELF-Datei über den Dynamic Linker (libld); Angriffsszenario laut NVD: Angreifer übergibt zwei präparierte ELF-Dateien und bringt das Opfer dazu, 'ldd' darauf auszuführen — upstream stuft dies als 'non-security bug, no real threat' ein (disputed). services/api-python lädt keine vom Nutzer bereitgestellten ELF-Dateien und führt kein ldd auf Fremddateien aus; der Angriffsweg setzt eine Interaktion voraus, die im Produktbetrieb nicht existiert. Kompensierender Faktor: fehlender Aufrufpfad plus von upstream bestrittene Sicherheitsrelevanz."
+    },
+    {
+      "vulnerability": { "name": "CVE-2019-1010024" },
+      "products": [
+        { "@id": "pkg:deb/debian/libc6@2.41-12%2Bdeb13u3?arch=amd64&distro=debian-13.6&upstream=glibc" }
+      ],
+      "status": "affected",
+      "status_notes": "Kein Fix (fix.state=not-fixed), von Debian als 'unimportant' geführt. NVD: möglicher ASLR-Bypass über den Cache von Thread-Stack- und Heap-Adressen; upstream stuft dies als 'non-security bug, no real threat' ein (disputed) — ein ASLR-Bypass allein ist laut Vendor-Position keine Schwachstelle, sondern erst in Kombination mit einer separaten Speicherfehler-Schwachstelle relevant, die hier nicht vorliegt. Kompensierender Faktor: derselbe wie bei CVE-2019-1010022 — kein Primärfehler im Anwendungscode vorhanden, den ein ASLR-Bypass verstärken könnte."
+    },
+    {
+      "vulnerability": { "name": "CVE-2019-1010025" },
+      "products": [
+        { "@id": "pkg:deb/debian/libc6@2.41-12%2Bdeb13u3?arch=amd64&distro=debian-13.6&upstream=glibc" }
+      ],
+      "status": "affected",
+      "status_notes": "Kein Fix (fix.state=not-fixed), von Debian als 'unimportant' geführt. NVD: Angreifer könnte Heap-Adressen eines pthread_created-Threads erraten; Vendor-Position ausdrücklich 'ASLR bypass itself is not a vulnerability'. Gleiche Bewertung wie CVE-2019-1010024: reines Informationsleck über Speicheradressen, für sich genommen ohne einen zweiten, hier nicht vorhandenen Speicherfehler nicht ausnutzbar. Kompensierender Faktor: fehlender Primärfehler im Anwendungscode."
+    },
+    {
+      "vulnerability": { "name": "CVE-2019-9192" },
+      "products": [
+        { "@id": "pkg:deb/debian/libc6@2.41-12%2Bdeb13u3?arch=amd64&distro=debian-13.6&upstream=glibc" }
+      ],
+      "status": "affected",
+      "status_notes": "Kein Fix (fix.state=not-fixed), von Debian als 'unimportant' geführt. Betrifft denselben regexec.c-Rekursionsfehler (check_dst_limits_calc_pos_1) wie CVE-2018-20796, unter einer separaten CVE-ID für einen weiteren Fund-Fall derselben Ursache erfasst. Gleiche Begründung: Python nutzt für Regex-Verarbeitung sein eigenes _sre-Modul, nicht glibcs POSIX-Regex-Engine — der verwundbare Codepfad ist vom Anwendungscode aus nicht erreichbar."
+    },
+    {
+      "vulnerability": { "name": "CVE-2026-19542" },
+      "products": [
+        { "@id": "pkg:deb/debian/libc6@2.41-12%2Bdeb13u3?arch=amd64&distro=debian-13.6&upstream=glibc" }
+      ],
+      "status": "affected",
+      "status_notes": "fix.state=wont-fix laut grype. Zum Zeitpunkt dieser Bewertung noch ohne öffentliche NVD-Beschreibung (Status RESERVED); laut Debian Security Tracker: 'Out-of-bounds stack array access in tdelete'. tdelete() (POSIX-Suchbaum-API aus search.h) wird von Python weder in der Standardbibliothek noch von FastAPI/uvicorn verwendet — ein Python-Prozess müsste diese C-Funktion explizit über ctypes/cffi aufrufen, was im Anwendungscode nicht geschieht. Kompensierender Faktor: keine erreichbare Aufrufkette vom Anwendungscode zur betroffenen Funktion."
+    },
+    {
+      "vulnerability": { "name": "CVE-2026-5435" },
+      "products": [
+        { "@id": "pkg:deb/debian/libc6@2.41-12%2Bdeb13u3?arch=amd64&distro=debian-13.6&upstream=glibc" }
+      ],
+      "status": "affected",
+      "status_notes": "fix.state=wont-fix laut grype. NVD: CVSS3.1 AV:N/AC:L/PR:N (7.3 High) — Out-of-bounds Write in den veralteten Funktionen ns_printrrf/ns_printrr/fp_nquery beim Ausgeben von TSIG-DNS-Records. Netzwerk-Attackvector setzt aber voraus, dass die Anwendung diese veralteten Debug-Print-Funktionen selbst aufruft; die reguläre DNS-Auflösung von Python/uvicorn läuft über getaddrinfo(), nicht über diese Funktionsfamilie. services/api-python ruft keine ns_print*/fp_nquery-Funktionen auf. Kompensierender Faktor: Der Netzwerk-Angriffsvektor der CVSS-Bewertung setzt einen Aufrufpfad voraus, der im Produktcode nicht existiert."
+    },
+    {
+      "vulnerability": { "name": "CVE-2026-5450" },
+      "products": [
+        { "@id": "pkg:deb/debian/libc6@2.41-12%2Bdeb13u3?arch=amd64&distro=debian-13.6&upstream=glibc" }
+      ],
+      "status": "affected",
+      "status_notes": "fix.state=wont-fix laut grype. NVD: CVSS3.1 AV:N/AC:L/PR:N (9.8 Critical) — Ein-Byte-Heap-Overflow beim Aufruf der scanf-Familie mit '%mc'-Formatangabe und Breitenangabe > 1024. Python parst Anwendungs-/HTTP-Eingaben nicht über glibcs scanf()-Familie (CPython nutzt eigene Parser für str/JSON/Formulardaten); der verwundbare C-API-Aufruf mit dieser spezifischen Formatangabe kommt im Anwendungscode nicht vor. Kompensierender Faktor: trotz kritischer CVSS-Einstufung fehlt der Aufrufpfad vollständig, da die Schwachstelle einen expliziten, hier nicht vorhandenen scanf-Aufruf mit gefährlicher Formatangabe voraussetzt."
+    },
+    {
+      "vulnerability": { "name": "CVE-2026-5928" },
+      "products": [
+        { "@id": "pkg:deb/debian/libc6@2.41-12%2Bdeb13u3?arch=amd64&distro=debian-13.6&upstream=glibc" }
+      ],
+      "status": "affected",
+      "status_notes": "fix.state=wont-fix laut grype. NVD: CVSS3.1 AV:N/AC:L/PR:N (7.5 High) — Buffer-Under-read in ungetwc() (_IO_wdefault_pbackfail, libio/wgenops.c) bei Wide-Char-Streams mit überlappenden Ein-/Mehrbyte-Kodierungen. CPython verwendet für seine eigene I/O-Schicht (Sockets, HTTP-Requests über uvicorn) nicht glibcs Wide-Char-Stream-API (ungetwc/FILE*), sondern eigene gepufferte I/O. Kompensierender Faktor: der betroffene Funktionsaufruf kommt im Anwendungsprozess nicht vor."
+    },
+    {
+      "vulnerability": { "name": "CVE-2026-6238" },
+      "products": [
+        { "@id": "pkg:deb/debian/libc6@2.41-12%2Bdeb13u3?arch=amd64&distro=debian-13.6&upstream=glibc" }
+      ],
+      "status": "affected",
+      "status_notes": "fix.state=wont-fix laut grype. NVD: CVSS3.1 AV:N/AC:L/PR:N (6.5 Medium) — fehlende Validierung von RDATA-Länge gegen RDATA-Inhalt in denselben veralteten DNS-Debug-Funktionen wie CVE-2026-5435 (ns_printrrf/ns_printrr/fp_nquery); NVD selbst hält fest, diese Funktionen seien 'for application debugging only and hence not in the path of code executed by the DNS resolver'. Die reguläre Namensauflösung des Produkts läuft über getaddrinfo(), nicht über diese Debug-Funktionen. Kompensierender Faktor: laut Herstellerbeschreibung selbst nicht im normalen Resolver-Pfad, und im Anwendungscode ohnehin nicht aufgerufen."
+    },
+    {
+      "vulnerability": { "name": "CVE-2026-6368" },
+      "products": [
+        { "@id": "pkg:deb/debian/libc6@2.41-12%2Bdeb13u3?arch=amd64&distro=debian-13.6&upstream=glibc" }
+      ],
+      "status": "affected",
+      "status_notes": "fix.state=wont-fix laut grype. NVD: Attack Vector Local (nicht Network) — wordexp() mit WRDE_APPEND-Flag kann bei nachfolgendem wordfree() ungültigen Speicher liefern und den Prozess abbrechen. Python implementiert Shell-Wort-Expansion (shlex, subprocess-Argumentlisten) in reinem Python, ruft glibcs wordexp() nicht auf; im Anwendungscode gibt es keinen wordexp-Aufruf. Kompensierender Faktor: lokaler statt netzwerkbasierter Angriffsvektor laut NVD, zusätzlich fehlt der Aufrufpfad vollständig."
+    },
+    {
+      "vulnerability": { "name": "CVE-2026-6791" },
+      "products": [
+        { "@id": "pkg:deb/debian/libc6@2.41-12%2Bdeb13u3?arch=amd64&distro=debian-13.6&upstream=glibc" }
+      ],
+      "status": "affected",
+      "status_notes": "fix.state=wont-fix laut grype. NVD: CVSS4.0 6.6 Medium — parse_tilde() in wordexp() reserviert mit strndupa Stack-Speicher für einen Nutzernamen ohne Längenprüfung; ein sehr langer, per Tilde-Expansion übergebener Nutzername kann den Thread-Stack erschöpfen ('stack clash'), sofern eine Anwendung ungeprüfte Eingaben an wordexp() weiterreicht. services/api-python ruft wordexp() an keiner Stelle auf (siehe auch CVE-2026-6368) und reicht keine Nutzereingaben an eine solche Funktion durch. Kompensierender Faktor: die Schwachstelle setzt einen wordexp()-Aufrufpfad mit ungeprüften Eingaben voraus, den es im Produkt nicht gibt."
+    }
+  ]
+}

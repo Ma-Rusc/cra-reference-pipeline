@@ -70,6 +70,38 @@ lokalen Sperre wäre: Was auf der eigenen Arbeitsmaschine ein Risiko ist
 (unkontrollierte Ausführung, persistente Seiteneffekte), ist auf einer
 Wegwerf-VM ohne Anschluss an die lokale Umgebung keins.
 
+Das erlaubt einen breiten Bind-Mount (`-v "$PWD:/work"`), macht ihn aber
+nicht automatisch die richtige Wahl. Ab Stufe 4 (Policy-Gate) bekommen neue
+`docker run`-Aufrufe möglichst enge, wo sinnvoll read-only Mounts — die
+zweite grype-Ausgabe im `scan`-Job mountet nur die SBOM-Datei (`:ro`) und
+`reports/`, der `conftest`-Aufruf im `policy`-Job mountet `policy/` und
+`reports/` beide `:ro`, da conftest nichts schreibt. Ehrlich dazu: die
+bereits bestehenden Stufe-3-Schritte (SARIF-Erzeugung mit grype, osv-scanner,
+semgrep, trivy) laufen weiterhin mit dem breiteren `-v "$PWD:/work"`-Mount —
+das rückwirkend zu verengen ist kein Sicherheitsgewinn ohne echten
+Bedrohungsvermittler (Wegwerf-VM, siehe oben) und war nicht Teil dieser
+Änderung, wird hier aber nicht verschwiegen.
+
+### `policy`-Job endet für api-python absichtlich rot (Abweichung von Regel 12)
+
+CLAUDE.md, harte Regel 12: "Ein Job pro PR. Inkrementell aufbauen, jeder Job
+wird grün gesehen, bevor der nächste entsteht." Der `policy`-Job aus Stufe 4
+verletzt das für `policy (api-python)` bewusst: nur die Paketgruppen
+`perl-base` und `libc6` sind bewertet (siehe
+[traceability.md](traceability.md)), rund 15 weitere Pakete mit
+high/critical-Funden sind es nicht — das Gate bricht deshalb korrekt ab statt
+grün durchzulaufen.
+
+Begründung, warum das hier keine stillschweigende Regelverletzung ist,
+sondern eine bewusste Abweichung: PLAN.md fordert für Stufe 4 ausdrücklich,
+"bewusst eine echte CVE stehen zu lassen und durchzubewerten — damit man
+sieht, wie der Mechanismus im Ernstfall aussieht". Ein Gate, das beim ersten
+Lauf grün ist, hätte diesen Fall nie gezeigt. Die Konsequenz wird begrenzt,
+nicht verschwiegen: `policy` ist deshalb bewusst **kein** erforderlicher
+Status-Check im Ruleset (`id 19179030`) — ein rotes, nicht erzwungenes Gate
+sperrt `main` nicht. Erst nach einem Folge-PR, der die restlichen Pakete
+bewertet, wird `policy` zum Ruleset ergänzt und Regel 12 wieder eingehalten.
+
 ### Was ein höherer Tier zusätzlich könnte
 
 Mit GitHub Team/Enterprise: Org-weites Audit-Log, Org-Rulesets, erzwungene
