@@ -41,11 +41,25 @@ Deshalb wurde hier auf `chainguard/node` umgestellt (per Digest gepinnt,
 nicht `:latest`) — reduziert die grype-Funde auf 0, ohne die im Python-Fall
 beobachteten Startprobleme.
 
-## Nächster Schritt (nicht in diesem PR)
+## Gegencheck: trivy im Image-Scan-Modus
 
-Die grype-Nullmeldung für `web-node`/chainguard ist nur mit einem Werkzeug
-belegt. Bevor daraus in Stufe 4 eine dauerhafte Entscheidung wird: trivy
-(bereits im `scan`-Job für den Lizenz-Scan vorhanden) zusätzlich als
-Vulnerability-Scanner gegen dieselbe Image-SBOM laufen lassen, um die
-Nullmeldung mit einem zweiten Datensatz gegenzuprüfen — eigener,
-nachgelagerter Schritt, nicht Teil dieser Umsetzung.
+Die grype-Nullmeldung für `web-node`/chainguard war zunächst nur durch ein
+Werkzeug belegt (grype gegen die syft-erzeugte SBOM). Gegengeprüft mit
+trivy (gleiche Version wie im `scan`-Job, `0.74.0`) im **Image-Scan-Modus**
+(`trivy image --input <tarball>`, nicht `trivy sbom`) gegen exakt dasselbe
+digest-gepinnte Image — eine andere Erkennungskette: native Image-
+Inspektion statt Vermittlung über eine von syft erzeugte SBOM.
+
+| Tool | Modus | Ziel | Ergebnis |
+|---|---|---|---|
+| grype | SBOM (`sbom:<datei>`) | syft-erzeugte CycloneDX-SBOM | 0 Funde |
+| trivy | Image (`image --input <tarball>`) | dasselbe digest-gepinnte Image direkt | 0 Funde (27 Wolfi-OS-Pakete + Node.js-Sprachziel, beide 0) |
+
+**Einschätzung: Die Null ist robust, kein SBOM-Erfassungsartefakt.** Zwei
+Werkzeuge mit unterschiedlicher Erkennungskette (grype+syft über eine
+vermittelnde SBOM vs. trivy nativ direkt am Image) kommen zum selben
+Ergebnis. Ehrlich dazu: Chainguard-Images sind Wolfi-basiert (apk, nicht
+dpkg) und explizit darauf ausgelegt, kontinuierlich neu gebaut und
+möglichst CVE-frei gehalten zu werden — die Null bestätigt also auch, dass
+dieses Versprechen hier eingehalten wird, ist aber kein Beleg dafür, dass
+Wolfi-Pakete grundsätzlich nie Schwachstellen haben werden.
