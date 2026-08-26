@@ -284,6 +284,82 @@ jobs:
           sarif_file: reports/trivy-license-${{ matrix.service }}.sarif
           category: trivy-license-${{ matrix.service }}
 
+  policy:
+    name: policy (${{ matrix.service }})
+    runs-on: ubuntu-latest
+    needs: scan
+    # Kein security-events: write — conftest erzeugt kein SARIF, das
+    # Ergebnis geht sichtbar ins Job-Log und in $GITHUB_STEP_SUMMARY.
+    permissions:
+      contents: read
+    strategy:
+      matrix:
+        service: [api-python, web-node]
+    steps:
+      - name: Checkout
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+
+      - name: grype-JSON herunterladen
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          name: grype-json-${{ matrix.service }}
+          path: reports
+
+      - name: Scan-Ergebnis und VEX-Daten validieren
+        # Schutz gegen stillen Fehlschlag: eine fehlende oder leere Datei
+        # darf nie stillschweigend als "keine Funde" durchgehen.
+        run: |
+          test -s reports/grype-${{ matrix.service }}.json \
+            || { echo "::error::grype-JSON fehlt oder ist leer"; exit 1; }
+          jq -e '.matches != null' reports/grype-${{ matrix.service }}.json > /dev/null \
+            || { echo "::error::grype-JSON hat kein 'matches'-Feld — kein valides Scan-Ergebnis"; exit 1; }
+          for f in vex/*.json; do
+            jq -e '.statements != null and (.statements | length) > 0' "$f" > /dev/null \
+              || { echo "::error::$f ist kein valides OpenVEX-Dokument (fehlendes/leeres statements-Array)"; exit 1; }
+          done
+
+      - name: VEX-Statements zusammenführen
+        # conftest würde mehrere --data-Dateien mit demselben Top-Level-Key
+        # "statements" beim Laden überschreiben statt zusammenzuführen
+        # (verifiziert gegen die conftest-Doku) — deshalb explizit per jq,
+        # nicht per --data vex/. Jede Statement-Kopie bekommt zusätzlich das
+        # Quelldokument (_source_document) für das Step-Summary unten.
+        run: |
+          jq -s '{statements: [.[] | . as $doc | $doc.statements[] | . + {"_source_document": $doc["@id"]}]}' \
+            vex/*.json > reports/vex-combined.json
+          count=$(jq '.statements | length' reports/vex-combined.json)
+          [ "$count" -gt 0 ] || { echo "::error::Zusammengeführte VEX-Statements sind leer"; exit 1; }
+          echo "VEX-Statements zusammengeführt: $count"
+
+      - name: Policy-Gate (conftest)
+        # Enge, read-only Mounts: conftest liest nur policy/ und reports/,
+        # schreibt nichts. Exit-Code wird bewusst manuell ausgewertet
+        # (set +e/set -e), damit das Step-Summary auch bei einem
+        # fehlschlagenden Gate geschrieben wird, bevor der Schritt rot wird.
+        run: |
+          set +e
+          docker run --rm \
+            -v "$PWD/policy:/project/policy:ro" \
+            -v "$PWD/reports:/project/reports:ro" \
+            -w /project \
+            openpolicyagent/conftest@sha256:a38ba21668929a00dce2fe6ee43d1312228340bce5fd243f47dd0ce90516e558 \
+            test --policy policy/ --data reports/vex-combined.json --output json \
+            reports/grype-${{ matrix.service }}.json > policy-result.json
+          CONFTEST_EXIT=$?
+          set -e
+
+          {
+            echo "### Policy-Gate: ${{ matrix.service }}"
+            echo
+            echo "**Abgedeckt durch VEX (warn, nicht blockierend):**"
+            jq -r '.[].warnings[]?.msg // empty' policy-result.json | sed 's/^/- /'
+            echo
+            echo "**Ohne VEX-Abdeckung (deny, blockierend):**"
+            jq -r '.[].failures[]?.msg // empty' policy-result.json | sed 's/^/- /'
+          } >> "$GITHUB_STEP_SUMMARY"
+
+          exit "$CONFTEST_EXIT"
+
   gitleaks:
     name: gitleaks
     runs-on: ubuntu-latest
