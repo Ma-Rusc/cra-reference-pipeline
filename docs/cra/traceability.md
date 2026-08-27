@@ -30,10 +30,6 @@ zugehörigen Jobs existieren.
   weiter, mit Debian-Tracker/NVD gegengeprüft) — dokumentiert in
   `vex/openssl.openvex.json` und `vex/python-runtime.openvex.json`, nicht
   stillschweigend als "durch den Bump gelöst" verbucht.
-- **`policy` ist weiterhin kein erforderlicher Status-Check.** Auch mit
-  grünem Gate wurde das Ruleset (`id 19179030`) in diesem PR bewusst nicht
-  angefasst — ausdrückliche Vorgabe, das Nachziehen ist ein separater,
-  späterer Schritt.
 - **Gate matcht Paketname, nicht Version.** `policy/vex_gate.rego` matcht
   VEX-Statements gegen den Paketnamen aus dem grype-Fund, nicht gegen die
   exakte im Statement genannte Paketversion. Ein Statement bleibt damit
@@ -44,10 +40,23 @@ zugehörigen Jobs existieren.
   beschriebene organisatorische Prozess. Bewusste Vereinfachung
   (robusterer Match, weniger Wartungsaufwand), aber auch eine reale Lücke:
   ein technisch unerzwungener Prozess kann unterbleiben.
-- **Gate läuft nach dem GHCR-Push, nicht davor.** `build` (inkl. Push nach
-  `main`) läuft vor `sbom`/`scan`/`policy`. Ein fehlschlagendes Gate
-  verhindert die Auslieferung eines bereits gebauten Images aktuell nicht
-  — es liefert eine nachträgliche, sichtbare Bewertung, keine Vorab-Sperre.
+
+**Korrektur (Stufe 5): "erfüllt" war vor diesem Schritt nicht zutreffend.**
+Bis Stufe 5 lief der GHCR-Push im `build`-Job, *bevor* `sbom`/`scan`/
+`policy` liefen — ein rotes Gate hätte die Auslieferung eines bereits
+gepushten Images nicht verhindert, das war eine nachträgliche Bewertung,
+keine Vorab-Sperre. Die frühere "erfüllt"-Zeile war damit zum Zeitpunkt
+ihres Schreibens sachlich unzutreffend, nicht nur unvollständig
+dokumentiert. Erst mit Stufe 5 wird die Anforderung technisch
+durchgesetzt: `push` (der Job, der tatsächlich nach GHCR veröffentlicht)
+läuft jetzt mit `needs: [sbom, scan, policy]` und nur bei Push nach
+`main`; `policy (api-python)` und `policy (web-node)` sind zusätzlich
+erzwungene Status-Checks im Ruleset (`id 19179030`, gegen `gh api`
+verifiziert, in diesem Schritt nicht verändert) — ein rotes Gate
+blockiert den Push jetzt technisch, nicht nur sichtbar im Nachhinein.
+Der `push`-Job verifiziert zusätzlich über die Docker-Image-ID, dass
+exakt das geprüfte und kein neu gebautes Image veröffentlicht wird. Erst
+ab diesem Stand ist "erfüllt" ehrlich.
 
 **Bekannte Einschränkung (`sbom`-Job):** Die Image-SBOM wird erzeugt, indem
 syft im Container das per `docker save` erzeugte OCI-Tarball über einen
