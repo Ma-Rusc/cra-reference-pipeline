@@ -15,12 +15,9 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: read
-      packages: write
     strategy:
       matrix:
         service: [api-python, web-node]
-    outputs:
-      digest: ${{ steps.build.outputs.digest }}
     steps:
       - name: Checkout
         uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
@@ -37,15 +34,7 @@ jobs:
       - name: Buildx einrichten
         uses: docker/setup-buildx-action@bb05f3f5519dd87d3ba754cc423b652a5edd6d2c # v4.2.0
 
-      - name: Bei GHCR anmelden
-        if: github.event_name == 'push'
-        uses: docker/login-action@af1e73f918a031802d376d3c8bbc3fe56130a9b0 # v4.4.0
-        with:
-          registry: ghcr.io
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Image bauen (und bei Push nach main veröffentlichen)
+      - name: Image bauen (nur lokal, Push erfolgt erst nach grünem Gate im push-Job)
         id: build
         uses: docker/build-push-action@53b7df96c91f9c12dcc8a07bcb9ccacbed38856a # v7.3.0
         env:
@@ -54,7 +43,7 @@ jobs:
           context: services/${{ matrix.service }}
           tags: ${{ env.IMAGE_REF }}
           load: true
-          push: ${{ github.event_name == 'push' }}
+          push: false
 
       - name: Nicht-Root-Voreinstellung verifizieren
         run: |
@@ -82,6 +71,14 @@ jobs:
         if: always()
         run: docker rm -f smoke || true
 
+      - name: Image-ID festhalten
+        # Inhaltsadressierte Docker-Image-ID (Hash aus Layern + Config,
+        # unabhaengig von einem Registry-Push). Wird zusammen mit dem
+        # Tarball weitergereicht, damit der push-Job nach dem Laden
+        # beweisen kann, dass er exakt dieses und kein neu gebautes
+        # Image veroeffentlicht.
+        run: docker inspect --format='{{.Id}}' "$IMAGE_REF" > image-id.txt
+
       - name: Image als Archiv sichern
         run: docker save "$IMAGE_REF" -o image.tar
 
@@ -89,16 +86,18 @@ jobs:
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: image-${{ matrix.service }}
-          path: image.tar
+          path: |
+            image.tar
+            image-id.txt
           retention-days: 1
 
-      - name: Digest festhalten
-        if: github.event_name == 'push'
+      - name: Image-ID im Step-Summary festhalten
         run: |
-          echo "### Image-Digest: ${{ matrix.service }}" >> "$GITHUB_STEP_SUMMARY"
+          echo "### Image-ID: ${{ matrix.service }}" >> "$GITHUB_STEP_SUMMARY"
           echo '```' >> "$GITHUB_STEP_SUMMARY"
-          echo "ghcr.io/${{ steps.vars.outputs.owner }}/${{ matrix.service }}@${{ steps.build.outputs.digest }}" >> "$GITHUB_STEP_SUMMARY"
+          cat image-id.txt >> "$GITHUB_STEP_SUMMARY"
           echo '```' >> "$GITHUB_STEP_SUMMARY"
+          echo "Registry-Digest folgt erst nach dem push-Job (Gate muss vorher grün sein)." >> "$GITHUB_STEP_SUMMARY"
 
   sbom:
     name: sbom (${{ matrix.service }})
@@ -365,6 +364,68 @@ jobs:
           } >> "$GITHUB_STEP_SUMMARY"
 
           exit "$CONFTEST_EXIT"
+
+  push:
+    name: push (${{ matrix.service }})
+    runs-on: ubuntu-latest
+    # Erst nach sbom, scan UND policy — ein rotes Gate verhindert den
+    # Push technisch, nicht nur eine nachtraegliche, sichtbare Bewertung.
+    needs: [sbom, scan, policy]
+    # Bei einem PR wird ohnehin nicht gepusht (wie zuvor im build-Job).
+    if: github.event_name == 'push'
+    permissions:
+      contents: read
+      packages: write
+    strategy:
+      matrix:
+        service: [api-python, web-node]
+    steps:
+      - name: Referenzen ableiten (Kleinbuchstaben-Owner, Image-Tag)
+        env:
+          OWNER: ${{ github.repository_owner }}
+        run: |
+          owner="${OWNER,,}"
+          echo "IMAGE_REF=ghcr.io/$owner/${{ matrix.service }}:${{ github.sha }}" >> "$GITHUB_ENV"
+
+      - name: Image-Artefakt herunterladen
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          name: image-${{ matrix.service }}
+
+      - name: Image laden und Identität gegen das geprüfte Artefakt verifizieren
+        # Beweist, dass das hier zu pushende Image bitidentisch mit dem
+        # ist, das sbom/scan/policy tatsächlich bewertet haben — nicht
+        # nur angenommen, weil beide aus demselben Artefakt-Namen stammen.
+        run: |
+          docker load -i image.tar
+          actual_id="$(docker inspect --format='{{.Id}}' "$IMAGE_REF")"
+          expected_id="$(cat image-id.txt)"
+          if [ "$actual_id" != "$expected_id" ]; then
+            echo "::error::Geladene Image-ID ($actual_id) weicht von der im build-Job festgehaltenen ID ($expected_id) ab — das gescannte Artefakt ist nicht identisch mit dem zu pushenden Image."
+            exit 1
+          fi
+          echo "Image-ID verifiziert (identisch mit dem in sbom/scan/policy geprüften Artefakt): $actual_id"
+
+      - name: Bei GHCR anmelden
+        uses: docker/login-action@af1e73f918a031802d376d3c8bbc3fe56130a9b0 # v4.4.0
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Image pushen
+        run: docker push "$IMAGE_REF"
+
+      - name: Registry-Digest festhalten
+        run: |
+          digest="$(docker inspect --format='{{index .RepoDigests 0}}' "$IMAGE_REF")"
+          {
+            echo "### Image gepusht: ${{ matrix.service }}"
+            echo '```'
+            echo "$digest"
+            echo '```'
+            echo "Image-ID (verifiziert identisch mit dem geprüften Artefakt): $(cat image-id.txt)"
+          } >> "$GITHUB_STEP_SUMMARY"
 
   gitleaks:
     name: gitleaks
