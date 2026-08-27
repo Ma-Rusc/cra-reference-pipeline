@@ -113,6 +113,34 @@ trifft die Voraussetzung zu (siehe "Warum GitHub Free, public, ein
 Account" oben), wird hier aber als Abhängigkeit festgehalten, nicht als
 Selbstverständlichkeit.
 
+### SHA-Pinning reicht nur so weit wie unsere eigene `uses:`-Zeile
+
+Im Log von [Run 33057376219](https://github.com/Ma-Rusc/cra-reference-pipeline/actions/runs/33057376219)
+ist sichtbar: `actions/attest-build-provenance@4d101475...` (von uns
+gepinnt) lädt intern `actions/attest@508db95dd578ae2727ebd6217d5ba78e4fbda05d`
+(v4.2.1) nach — eine Action, die nicht in unserer eigenen `ci.yml` oder
+CLAUDE.md-Pin-Tabelle auftaucht. Genauer geprüft, nicht nur behauptet
+(`gh api repos/actions/attest-build-provenance/contents/action.yml?ref=4d101475...`):
+diese verschachtelte `uses:`-Zeile ist am exakt von uns gepinnten Commit
+selbst bereits SHA-gepinnt, nicht `@latest` oder ein Tag. Das heißt:
+**reproduzierbar ist es bereits** — unser äußerer SHA-Pin macht auch den
+inneren Aufruf deterministisch, weil er Teil desselben unveränderlichen
+Commit-Inhalts ist. Die reale Lücke ist eine **Sichtbarkeits-, nicht
+eine Reproduzierbarkeitslücke**: diese verschachtelte Version taucht in
+unserer eigenen Pin-Übersicht nicht auf, man müsste den Quellcode der
+Composite-Action selbst öffnen, um sie zu finden. Konkret sichtbar wird
+das daran, dass `508db95d` (v4.2.1) eine **andere, ältere** Version ist
+als das `actions/attest@1e69f48a` (v4.2.2), das wir für den SBOM-Schritt
+im selben Job direkt und bewusst pinnen — zwei Versionen derselben
+Action in einem Job, ohne dass das aus `ci.yml` ersichtlich wäre.
+
+Schließbar wäre das nur durch Forken/Vendoring der Composite-Action
+(eigene Kontrolle über jede Zeile) — für ein Referenzprojekt
+unverhältnismäßiger Aufwand angesichts einer bereits deterministischen,
+nur nicht auf den ersten Blick sichtbaren Abhängigkeit. Das ist eine
+strukturelle Grenze jeder Nutzung von Composite-Actions, kein Versäumnis
+dieses Repos, wird hier aber nicht relativiert.
+
 ### Was ein höherer Tier zusätzlich könnte
 
 Mit GitHub Team/Enterprise: Org-weites Audit-Log, Org-Rulesets, erzwungene
