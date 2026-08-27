@@ -13,6 +13,7 @@ zugehörigen Jobs existieren.
 | Anhang I Teil I Nr. 3 (sichere Voreinstellungen) — Non-Root-Container | — | `USER`-Direktive je Dockerfile, verifiziert mit `docker run --rm <image> id` | Teilweise — Voreinstellung, zur Laufzeit mit `--user root` überschreibbar; deckt nur Non-Root ab, nicht alle Aspekte von "secure by default" |
 | Anhang I Teil II Nr. 3 (regelmäßige Tests auf Schwachstellen) | `scan` | SARIF im Code Scanning (grype, osv-scanner, semgrep — je Service, 6 Kategorien) | erfüllt |
 | Anhang I Teil I Nr. 2 (keine bekannten ausnutzbaren Schwachstellen bei Auslieferung) | `policy` | conftest-Gate-Log (`$GITHUB_STEP_SUMMARY`) + VEX-Statements (`vex/`) | erfüllt — siehe Einschränkungen unten |
+| Anhang I Teil II Nr. 7/8 (sichere Verteilung von Updates, Herkunft nachprüfbar) | `push` | Sigstore-Attestation (Build-Provenance + SBOM, `actions/attest-build-provenance` + `actions/attest`) je Image-Digest, verifiziert im selben Job per `gh attestation verify` (zwei Aufrufe, Provenance- und SBOM-Prädikattyp getrennt) | Teilweise — Mechanismus verdrahtet, aber im PR-Lauf nicht beobachtbar (`push` läuft nur bei Push nach `main`); erst nach einem echten Post-Merge-Lauf mit grünem Ergebnis auf "erfüllt" hochstufen. Siehe Einschränkungen unten |
 
 **Einschränkungen (`policy`-Job):**
 
@@ -57,6 +58,39 @@ blockiert den Push jetzt technisch, nicht nur sichtbar im Nachhinein.
 Der `push`-Job verifiziert zusätzlich über die Docker-Image-ID, dass
 exakt das geprüfte und kein neu gebautes Image veröffentlicht wird. Erst
 ab diesem Stand ist "erfüllt" ehrlich.
+
+**Offener Negativtest.** Der Positivfall ist durch einen echten Lauf
+belegt: [Run 33051921487](https://github.com/Ma-Rusc/cra-reference-pipeline/actions/runs/33051921487)
+(erster `push`-Event-Lauf nach dem Merge der Push-Reihenfolge-Änderung)
+zeigt `push (api-python)` und `push (web-node)` erfolgreich, nachdem
+`sbom`/`scan`/`policy` grün liefen. Der Negativfall — ein rotes `policy`
+verhindert den Push tatsächlich — ist verdrahtet (`needs: [sbom, scan,
+policy]`), aber durch **keinen** Testlauf belegt, anders als die
+Baustein-3-Fehlerinjektion für das `policy`-Gate selbst in Stufe 4
+([vex/README.md](../../vex/README.md)). Das ist eine offene Lücke, keine
+Erfüllung — bewusst nicht in diesem Schritt nachgeholt (Umfang: Push-
+Reihenfolge und Attestation, kein weiterer Fehlerinjektionstest).
+
+**Einschränkungen (`push`-Job, Attestation):**
+
+- **Registry-Speicherung, nicht nur GitHub-Speicherung.** Beide
+  Attestationen werden mit `push-to-registry: true` erzeugt — zusätzlich
+  zur GitHub-Attestations-API auch als OCI-Referrer in der Registry
+  selbst auffindbar, damit auch registry-native Werkzeuge (cosign, oras)
+  sie ohne GitHub-API finden. Der eigentliche Vertrauensanker bleibt in
+  beiden Fällen Sigstore (Fulcio/Rekor), nicht GitHub selbst.
+- **Verifikation läuft im selben Job, der auch pusht.** `gh attestation
+  verify` läuft direkt im Anschluss an das Attestieren, nicht als
+  unabhängiger, später ausgelöster Job. Für dieses Referenzprojekt
+  bewusst so gewählt (einfacher, gleicher Kontext), schwächer als eine
+  komplett getrennte, zeitversetzte Nachprüfung.
+- **Zwei `gh attestation verify`-Aufrufe statt einem**, weil Build-
+  Provenance (SLSA Provenance v1) und SBOM (CycloneDX,
+  `https://cyclonedx.org/bom`) unterschiedliche Prädikattypen sind und
+  `gh attestation verify` per Default nur den ersten erzwingt. Wird eine
+  dritte Attestationsart ergänzt, muss das hier und im README-
+  Verifikationsbeispiel mitgepflegt werden — kein automatischer
+  Gleichlauf.
 
 **Bekannte Einschränkung (`sbom`-Job):** Die Image-SBOM wird erzeugt, indem
 syft im Container das per `docker save` erzeugte OCI-Tarball über einen

@@ -102,6 +102,17 @@ Status-Check im Ruleset (`id 19179030`) — ein rotes, nicht erzwungenes Gate
 sperrt `main` nicht. Erst nach einem Folge-PR, der die restlichen Pakete
 bewertet, wird `policy` zum Ruleset ergänzt und Regel 12 wieder eingehalten.
 
+### Artifact Attestations nur wegen des öffentlichen Repos kostenlos
+
+Die Sigstore-Attestationen (Build-Provenance + SBOM, `push`-Job) nutzen
+GitHubs Artifact-Attestations-Funktion. Die ist auf GitHub Free nur für
+öffentliche Repositories verfügbar — bei einem privaten Repo auf Free
+stünde dieser Baustein so nicht zur Verfügung (Team/Enterprise wäre
+nötig, oder das Repo müsste öffentlich sein). Für dieses Referenzprojekt
+trifft die Voraussetzung zu (siehe "Warum GitHub Free, public, ein
+Account" oben), wird hier aber als Abhängigkeit festgehalten, nicht als
+Selbstverständlichkeit.
+
 ### Was ein höherer Tier zusätzlich könnte
 
 Mit GitHub Team/Enterprise: Org-weites Audit-Log, Org-Rulesets, erzwungene
